@@ -26,3 +26,19 @@
 @media(max-width:760px){.landing .container{width:calc(100% - 36px)}.landing .hero h1{font-size:clamp(38px,10vw,56px)}}
 /* Bring back contrast across the light application without adding the landing effect. */
 .app-shell p,.app-shell small{color:#63756b}.app-shell .stat-card small,.app-shell .workspace-card-footer,.app-shell .local-notice{color:#75877c}.app-shell .markdown{color:#344d3c}.app-shell .sidebar-nav a,.app-shell .sidebar-nav button{color:#607365}.app-shell .sidebar-nav .active{color:#217449}.auth-card>p{color:#63756b}.auth-footnote{color:#788a7e}
+.sign-in-modal{width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid #e8dff0;border-radius:24px;background:#fff;color:#262033;overflow:auto;box-shadow:0 30px 100px #10051b80}
+.sign-in-modal::backdrop{background:#10091b99;backdrop-filter:blur(8px)}
+.sign-in-close{position:absolute;right:14px;top:14px;z-index:2;color:#675775}
+.sign-in-loading{padding:48px;text-align:center}
+.sign-in-modal .auth-page{min-height:0;padding:0;background:#fff}
+.sign-in-modal .auth-nav,.sign-in-modal .auth-story,.sign-in-modal .auth-footer,.sign-in-modal .auth-bottom-note{display:none}
+.sign-in-modal .auth-layout{display:block;width:100%;max-width:none;margin:0;padding:0;min-height:0}
+.sign-in-modal .auth-form-area{display:block;padding:0;width:100%}
+.sign-in-modal .auth-card{width:100%;max-width:none;padding:36px 28px 28px;border:0;border-radius:0;box-shadow:none;margin:0;background:#fff}
+.sign-in-modal .auth-card h2{font-size:28px}
+.sign-in-modal .auth-card .primary{background:#8754b8;color:#fff}
+.landing .sign-in-modal h2{color:#30243f;background:none;-webkit-text-fill-color:#30243f}
+.landing .sign-in-modal .overline{color:#79568e}
+.landing .sign-in-modal .text-link,.landing .sign-in-modal .auth-toggle button{color:#704395}
+.landing .sign-in-modal .icon-button{color:#704395}
+.landing .sign-in-modal .auth-card p{color:#62616b}

@@ -65,3 +65,11 @@
 .cp-restored-content .cp-workflow-summary .cp-visual-header{align-items:flex-start}
 .cp-restored-content .cp-workflow-summary .cp-visual-output h3{margin-top:10px}
 @media(max-width:700px){.cp-restored-content .cp-communication-card{padding:20px 0}.cp-restored-content .cp-workflow-summary{margin:0;padding:28px 24px 40px;gap:28px}.cp-restored-content .cp-communication-grid{gap:4px}}
+/* Wider, more legible header with branding and actions near the page edges. */
+.orbit-bar{left:4%;width:92%;top:calc(18 * var(--u));height:calc(44 * var(--u));display:flex;align-items:center;justify-content:space-between;gap:calc(28 * var(--u))}
+.orbit-brand{position:static;transform:none;flex-shrink:0;gap:calc(12 * var(--u))}.orbit-brand span{font-size:calc(22 * var(--u))}.orbit-brand svg{width:calc(31 * var(--u));height:calc(24 * var(--u))}
+.orbit-links{position:static;transform:none;gap:calc(32 * var(--u));align-items:center}.orbit-links a{font-size:calc(14.5 * var(--u));font-weight:500}
+.orbit-actions{position:static;align-items:center;gap:calc(10 * var(--u));flex-shrink:0}.orbit-bar .orbit-btn{height:calc(44 * var(--u));line-height:calc(44 * var(--u));font-size:calc(14 * var(--u))}.orbit-bar .orbit-ghost{width:calc(104 * var(--u))}.orbit-bar .orbit-solid{width:calc(112 * var(--u));font-size:calc(14 * var(--u))}
+.orbit-menu{width:calc(44 * var(--u));height:calc(44 * var(--u))}
+@media(max-width:1023px){.orbit-bar{left:4.2%;width:91.6%;gap:calc(18 * var(--u))}.orbit-links{display:none}.orbit-brand span{font-size:calc(21 * var(--u))}}
+@media(max-width:640px){.orbit-bar{left:5.2%;width:89.6%;top:calc(16 * var(--u))}.orbit-brand span{font-size:calc(21 * var(--u))}.orbit-bar .orbit-ghost{width:calc(86 * var(--u))}.orbit-actions{gap:calc(8 * var(--u))}.orbit-brand{gap:calc(8 * var(--u))}}

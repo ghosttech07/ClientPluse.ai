@@ -1,9 +1,10 @@
 'use client';
-import {useEffect,useRef,type ReactNode} from 'react';
+import {useEffect,useRef,useState,type ReactNode} from 'react';
 
 const cards='.cp-panel,.cp-stat,.cp-auth-card,.cp-form-modal';
 export function WorkspaceGlow({children}:{children:ReactNode}){
- const root=useRef<HTMLDivElement>(null);
+ const root=useRef<HTMLDivElement>(null);const [theme,setTheme]=useState('light');
+ useEffect(()=>{const sync=()=>setTheme(localStorage.getItem('cp-theme')==='dark'?'dark':'light');sync();window.addEventListener('cp-theme-change',sync);window.addEventListener('storage',sync);return()=>{window.removeEventListener('cp-theme-change',sync);window.removeEventListener('storage',sync);};},[]);
  useEffect(()=>{
   const container=root.current;if(!container)return;
   let frame=0,active:HTMLElement|null=null,x=0,y=0;
@@ -21,5 +22,5 @@ export function WorkspaceGlow({children}:{children:ReactNode}){
   container.addEventListener('pointermove',move,{passive:true});container.addEventListener('pointerleave',clear);
   return()=>{cancelAnimationFrame(frame);container.removeEventListener('pointermove',move);container.removeEventListener('pointerleave',clear);clear();};
  },[]);
- return <div ref={root} className="cp-glow-workspace">{children}</div>;
+ return <div ref={root} className="cp-glow-workspace" data-theme={theme}>{children}</div>;
 }

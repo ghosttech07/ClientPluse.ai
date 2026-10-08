@@ -19,12 +19,12 @@ def valid_email(value):
 
 
 def sender():
-    if os.getenv('EMAIL_PROVIDER','resend').lower()=='gmail_api':
+    if os.getenv('EMAIL_PROVIDER','resend').strip().lower()=='gmail_api':
         address=os.getenv('GMAIL_EMAIL','').strip()
         if not valid_email(address) or not all(os.getenv(key,'').strip() for key in ('GMAIL_CLIENT_ID','GMAIL_CLIENT_SECRET','GMAIL_REFRESH_TOKEN')):
             raise HTTPException(503,'Complete Gmail API authorization: configure GMAIL_EMAIL, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET and GMAIL_REFRESH_TOKEN on the backend.')
         return address
-    if os.getenv('EMAIL_PROVIDER','resend').lower()=='gmail':
+    if os.getenv('EMAIL_PROVIDER','resend').strip().lower()=='gmail':
         address=os.getenv('GMAIL_EMAIL','').strip()
         if not valid_email(address) or not os.getenv('GMAIL_APP_PASSWORD','').strip():
             raise HTTPException(503,'Configure GMAIL_EMAIL and GMAIL_APP_PASSWORD in the backend .env.')
@@ -36,20 +36,38 @@ def sender():
     return value
 
 
-def gmail_api_send(message):
-    """Refresh server-only OAuth credentials and send over HTTPS, without retries."""
+def gmail_access_token():
+    """Validate OAuth before attempting delivery; never expose provider secrets."""
+    credentials={key:os.getenv(key,'').strip().strip('"\'') for key in ('GMAIL_CLIENT_ID','GMAIL_CLIENT_SECRET','GMAIL_REFRESH_TOKEN')}
+    if any(any(character.isspace() for character in value) for value in credentials.values()):
+        raise HTTPException(503,'Gmail OAuth credentials contain spaces or line breaks. Paste each complete value on one line in Render.')
     try:
-        token=httpx.post('https://oauth2.googleapis.com/token',data={
-            'client_id':os.getenv('GMAIL_CLIENT_ID'),
-            'client_secret':os.getenv('GMAIL_CLIENT_SECRET'),
-            'refresh_token':os.getenv('GMAIL_REFRESH_TOKEN'),
+        response=httpx.post('https://oauth2.googleapis.com/token',data={
+            'client_id':credentials['GMAIL_CLIENT_ID'],
+            'client_secret':credentials['GMAIL_CLIENT_SECRET'],
+            'refresh_token':credentials['GMAIL_REFRESH_TOKEN'],
             'grant_type':'refresh_token',
         },timeout=20)
-        if token.status_code!=200:
-            raise HTTPException(503,'Google authorization failed. Reconnect the Gmail account and update its OAuth credentials.')
-        access_token=token.json().get('access_token')
-        if not access_token:
-            raise HTTPException(503,'Google did not return an access token. Reconnect the Gmail account.')
+        data=response.json()
+    except (httpx.HTTPError,ValueError):
+        raise HTTPException(503,'Unable to reach Google authorization. Please retry shortly; no email was sent.')
+    if response.status_code!=200:
+        reasons={
+            'invalid_client':'Google rejected the OAuth client ID or client secret. Use the matching credentials from the same Google Cloud client.',
+            'invalid_grant':'Google rejected the refresh token. It may be expired, revoked, or issued to a different OAuth client. Generate a new token using the exact client ID and secret configured in Render.',
+            'unauthorized_client':'This OAuth client is not authorized for token refresh. Check its Google Cloud OAuth configuration.',
+        }
+        raise HTTPException(503,reasons.get(data.get('error'),'Google token refresh failed. Check the Gmail OAuth configuration.'))
+    access_token=data.get('access_token')
+    if not access_token:
+        raise HTTPException(503,'Google did not return an access token. Reconnect the Gmail account.')
+    return access_token
+
+
+def gmail_api_send(message):
+    """Refresh server-only OAuth credentials and send over HTTPS, without retries."""
+    access_token=gmail_access_token()
+    try:
         response=httpx.post('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
             headers={'Authorization':'Bearer '+access_token},
             json={'raw':base64.urlsafe_b64encode(message.as_bytes()).decode('ascii')},timeout=25)
@@ -77,7 +95,9 @@ class SendDraft(BaseModel):
 
 @router.get('/email/config')
 def config(org=Depends(tenant),reply=Depends(verified_email)):
-    try:from_address=sender();ready=True;message=None
+    try:
+        from_address=sender();ready=True;message=None
+        if os.getenv('EMAIL_PROVIDER','resend').strip().lower()=='gmail_api':gmail_access_token()
     except HTTPException as error:from_address=None;ready=False;message=error.detail
     return {'configured':ready,'from_email':from_address,'reply_to':reply,'message':message}
 
@@ -100,7 +120,7 @@ def send(did:str,body:SendDraft,org=Depends(tenant),reply=Depends(verified_email
     if draft.content!=body.content:raise HTTPException(409,'Save and approve your latest edits before sending.')
     if draft.kind!='Follow-up email':raise HTTPException(400,'Only follow-up email drafts can be sent to customers.')
     from_address=sender()
-    provider=os.getenv('EMAIL_PROVIDER','resend').lower()
+    provider=os.getenv('EMAIL_PROVIDER','resend').strip().lower()
     gmail=provider in ('gmail','gmail_api')
     if gmail and existing:
         raise HTTPException(409,'This draft already has a send attempt. Check your Sent folder before generating a new draft; automatic retries could send duplicates.')

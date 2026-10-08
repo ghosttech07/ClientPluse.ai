@@ -38,9 +38,6 @@ export default function LiquidEther({
   useEffect(() => {
     if (!mountRef.current) return;
 
-    let scrollUntil = 0;
-    const onScroll = () => { scrollUntil = performance.now() + 140; };
-    window.addEventListener("scroll", onScroll, { passive: true });
     function makePaletteTexture(stops) {
       let arr;
       if (Array.isArray(stops) && stops.length > 0) {
@@ -93,9 +90,9 @@ export default function LiquidEther({
       }
       init(container) {
         this.container = container;
-        this.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        this.pixelRatio = 1;
         this.resize();
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
         this.renderer.autoClear = false;
         this.renderer.setClearColor(new THREE.Color(0x000000), 0);
         this.renderer.setPixelRatio(this.pixelRatio);
@@ -298,12 +295,9 @@ export default function LiquidEther({
           if (this.active) this.forceStop();
           return;
         }
-        if (this.mouse.isHoverInside) {
-          if (this.active) this.forceStop();
-          return;
-        }
         if (!this.active) {
           this.active = true;
+          this.mouse.hasUserControl = false;
           this.current.copy(this.mouse.coords);
           this.lastTime = now;
           this.activationTime = now;
@@ -986,11 +980,7 @@ export default function LiquidEther({
       }
       loop() {
         if (!this.running) return; // safety
-        const now = performance.now();
-        if (now >= scrollUntil && (!this.lastFrame || now - this.lastFrame >= 1000 / 30)) {
-          this.render();
-          this.lastFrame = now;
-        }
+        this.render();
         rafRef.current = requestAnimationFrame(this._loop);
       }
       start() {
@@ -1110,7 +1100,6 @@ export default function LiquidEther({
       if (webglRef.current) {
         webglRef.current.dispose();
       }
-      window.removeEventListener("scroll", onScroll);
       webglRef.current = null;
     };
   }, [
@@ -1187,5 +1176,3 @@ export default function LiquidEther({
 
   return <div ref={mountRef} className={`liquid-ether-container ${className || ''}`} style={style} />;
 }
-
-

@@ -17,3 +17,5 @@ For a new project without this setup, initialize with `npx shadcn@latest init`. 
 Setup references: [Tailwind Next.js installation](https://tailwindcss.com/docs/installation/framework-guides/nextjs), [shadcn manual installation](https://ui.shadcn.com/docs/installation/manual).
 
 React Bits SpecularButton uses the supplied JS-CSS source plus `ogl`. Landing actions and the mobile menu use it. It caps device pixel ratio and rendering frequency, pauses offscreen, and keeps usable plain buttons for reduced-motion or unavailable WebGL.
+
+Dashboard and workspace controls use a lightweight specular-style sweep in apps/web/app/workspace-polish.css. It covers enabled buttons and actionable links/cards, responds to hover and keyboard focus, and respects reduced-motion preferences. This avoids one WebGL renderer per dashboard control. Search fields use a single focus-within outline on their container.

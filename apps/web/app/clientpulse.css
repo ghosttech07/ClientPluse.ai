@@ -79,3 +79,10 @@
 .cp-effects .cp-hero-visual>.cp-globe{order:2;position:relative;inset:auto;grid-column:1/-1;width:min(100%,380px);aspect-ratio:1;justify-self:center;overflow:hidden}
 .cp-effects .cp-hero-visual>.cp-signal{order:3;align-self:stretch}
 .cp-effects .cp-hero-visual>.cp-visual-output{order:4}
+
+/* Small compositor-only movements preserve the responsive card layout. */
+@keyframes cp-card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.cp-effects .cp-hero-visual>.cp-signal{animation:cp-card-float 5s ease-in-out infinite}
+.cp-effects .cp-hero-visual>.cp-signal:nth-of-type(4){animation-delay:-1.6s}
+.cp-effects .cp-hero-visual>.cp-signal:nth-of-type(5){animation-delay:-3.3s}
+@media(prefers-reduced-motion:reduce){.cp-effects .cp-hero-visual>.cp-signal{animation:none}}

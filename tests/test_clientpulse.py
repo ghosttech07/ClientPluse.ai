@@ -258,3 +258,84 @@ def test_company_setup_required_before_workspace_access(client):
     assert client.post('/api/v1/onboarding',json={'name':'  Acme Ltd  '}).json()['name']=='Acme Ltd'
     assert client.get('/api/v1/customers').status_code==200
     assert client.get('/api/v1/settings').json()['onboarding_required'] is False
+
+
+def test_manual_processing_success(client,customer,monkeypatch):
+    monkeypatch.setattr(worker,'available',lambda:False)
+    monkeypatch.setattr(worker,'analyse',lambda evidence:finding(evidence))
+    item=ticket(client,customer,'Customer: order ORD-1042 was delayed.',days=1)
+    fid=item['id']
+    # Verify initial status is Queued
+    assert client.get(f'/api/v1/uploads/{fid}').json()['status']=='Queued'
+    # Manually process via FastAPI endpoint without worker
+    res=client.post(f'/api/v1/uploads/{fid}/process')
+    assert res.status_code==200, res.text
+    assert res.json()['status']=='Ready'
+    # Verify evidence and complaints were extracted
+    detail=client.get(f'/api/v1/uploads/{fid}').json()
+    assert len(detail['evidence'])>=1
+    profile=client.get('/api/v1/customers/'+customer['id']).json()
+    assert len(profile['complaints'])==1
+    assert profile['complaints'][0]['category']=='Delivery delay'
+
+
+def test_manual_processing_duplicate_protection(client,customer,monkeypatch):
+    monkeypatch.setattr(worker,'available',lambda:False)
+    monkeypatch.setattr(worker,'analyse',lambda evidence:finding(evidence))
+    item=ticket(client,customer,'Customer: order ORD-1042 was delayed.')
+    fid=item['id']
+    # First manual process
+    res=client.post(f'/api/v1/uploads/{fid}/process')
+    assert res.status_code==200
+    # Duplicate processing on Ready file rejected with 409
+    dup=client.post(f'/api/v1/uploads/{fid}/process')
+    assert dup.status_code==409
+    assert 'already been processed' in dup.json()['detail']
+    # Processing an in-flight job also rejected with 409
+    item2=ticket(client,customer,'Customer: order ORD-1043 is delayed.')
+    fid2=item2['id']
+    with Session() as db:
+        up=db.get(m.Upload,fid2)
+        up.status='Processing'
+        up.lease_at=datetime.now(timezone.utc).isoformat()
+        db.commit()
+    in_flight=client.post(f'/api/v1/uploads/{fid2}/process')
+    assert in_flight.status_code==409
+    assert 'currently being processed' in in_flight.json()['detail']
+
+
+def test_manual_processing_failure_and_retry(client,customer,monkeypatch):
+    monkeypatch.setattr(worker,'available',lambda:False)
+    item=ticket(client,customer)
+    fid=item['id']
+    # Processing fails because Gemini analysis not available
+    fail_res=client.post(f'/api/v1/uploads/{fid}/process')
+    assert fail_res.status_code==422
+    assert client.get(f'/api/v1/uploads/{fid}').json()['status']=='Failed'
+    # Provide working mock and retry via process
+    monkeypatch.setattr(worker,'analyse',lambda evidence:finding(evidence))
+    retry_res=client.post(f'/api/v1/uploads/{fid}/process')
+    assert retry_res.status_code==200
+    assert retry_res.json()['status']=='Ready'
+
+
+def test_manual_processing_cross_tenant_denied(client,customer):
+    with Session() as db:
+        other_org=m.Organization(owner_id='other-owner',name='Other Corp',settings={'onboarding_completed':True})
+        db.add(other_org);db.flush()
+        other_upload=m.Upload(id='other-upload-1',organization_id=other_org.id,name='secret.txt',mime='text/plain',source_type='Document',path='dummy',size=10,status='Queued')
+        db.add(other_upload);db.commit()
+    # Attempting to process other tenant's upload must return 404
+    assert client.post('/api/v1/uploads/other-upload-1/process').status_code==404
+
+
+def test_process_queued_batch(client,customer,monkeypatch):
+    monkeypatch.setattr(worker,'available',lambda:False)
+    monkeypatch.setattr(worker,'analyse',lambda evidence:finding(evidence))
+    t1=ticket(client,customer,'Customer: issue one')
+    t2=ticket(client,customer,'Customer: issue two')
+    batch_res=client.post('/api/v1/uploads/process-queued?limit=5')
+    assert batch_res.status_code==200
+    assert batch_res.json()['processed_count']==2
+    assert client.get(f'/api/v1/uploads/{t1["id"]}').json()['status']=='Ready'
+    assert client.get(f'/api/v1/uploads/{t2["id"]}').json()['status']=='Ready'

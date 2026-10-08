@@ -4,7 +4,7 @@ Frontend: deploy the Next.js app on Vercel (root apps/web, install from the work
 
 Backend: deploy services/api/Dockerfile on Render, Railway, Fly.io or another container host. Set DATABASE_URL to the Supabase session-pooler PostgreSQL connection (postgresql+psycopg scheme, SSL as appropriate). Set GEMINI_API_KEY, GEMINI_MODEL, EMBEDDING_MODEL, DEEPGRAM_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET=clientpulse, STORAGE_PROVIDER=supabase and WEB_ORIGINS to the frontend HTTPS origin. Do not expose the service key or provider keys in frontend variables.
 
-Worker: deploy the same image with `python -m services.worker.main`, sharing database and Storage settings. It polls SQL status with atomic claims and recovers stale 15-minute leases. The API and worker do not require a shared local disk when using Supabase Storage; missing caches are restored from private objects. Use persistent disk for caches if helpful.
+Worker: A separate background worker is NOT required on Render. Processing jobs are triggered securely on-demand via the FastAPI backend (`POST /api/v1/uploads/{id}/process` and `POST /api/v1/uploads/process-queued`). If an asynchronous worker is desired in a self-hosted or dedicated environment, `python -m services.worker.main` can optionally run as a background task, sharing the exact same atomic claiming logic without conflicts.
 
 Run `python -m database.migrate` with a migration-capable database role before serving traffic. Migration 003 creates ClientPulse tables, vector column/index and tenant read policies. Supabase pgvector must be available. Do not substitute a Supabase REST API key for the database password.
 

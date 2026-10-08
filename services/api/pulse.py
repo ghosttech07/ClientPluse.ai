@@ -14,7 +14,7 @@ from services.api.security import user
 from services.api import pulse_models as m
 from services.api import storage
 from services.worker.processors import validate
-from services.worker.pulse import recalculate, WEIGHTS, redact
+from services.worker.pulse import recalculate, WEIGHTS, redact, claim_upload, process_upload
 from services.worker.ai import generate, available, embed, cosine, provider_error
 
 
@@ -265,6 +265,42 @@ def retry(fid:str,org=Depends(tenant),db=Depends(database)):
     row=get(db,m.Upload,fid,org)
     if row.status!='Failed':raise HTTPException(409,'Only failed communications can be retried.')
     row.status='Queued';row.error=None;db.commit();return serialize(row)
+
+
+@router.post('/uploads/{fid}/process')
+def process_manual(fid:str,org=Depends(tenant),db=Depends(database)):
+    row=get(db,m.Upload,fid,org)
+    if row.status in ('Ready','Partially Processed'):
+        raise HTTPException(409,'This communication has already been processed.')
+    cutoff=(datetime.now(timezone.utc)-timedelta(minutes=5)).isoformat()
+    if row.status=='Processing' and row.lease_at and row.lease_at>=cutoff:
+        raise HTTPException(409,'This communication is currently being processed by another request.')
+    if row.status=='Needs review' and not row.customer_id:
+        raise HTTPException(422,'Assign a verified customer before processing this communication.')
+    claimed,reason,_=claim_upload(fid,org)
+    if not claimed:
+        if reason=='already_completed':raise HTTPException(409,'This communication has already been processed.')
+        elif reason in ('already_processing','concurrent_claim'):raise HTTPException(409,'This communication is currently being processed by another request.')
+        elif reason=='needs_customer':raise HTTPException(422,'Assign a verified customer before processing this communication.')
+        else:raise HTTPException(404,'Communication record not found.')
+    result=process_upload(fid,org)
+    if not result:raise HTTPException(404,'Communication record not found.')
+    if result.status=='Failed':raise HTTPException(422,result.error or 'Processing failed. Check configured AI providers.')
+    return serialize(result)
+
+
+@router.post('/uploads/process-queued')
+def process_queued(limit:int=Query(5,ge=1,le=10),org=Depends(tenant),db=Depends(database)):
+    queued_ids=list(db.scalars(select(m.Upload.id).where(m.Upload.organization_id==org,m.Upload.status.in_(['Queued','Failed'])).order_by(m.Upload.created_at).limit(limit)))
+    processed=[];failed=[]
+    for qid in queued_ids:
+        claimed,reason,_=claim_upload(qid,org)
+        if claimed:
+            res=process_upload(qid,org)
+            if res:
+                if res.status in ('Ready','Partially Processed'):processed.append(serialize(res))
+                elif res.status=='Failed':failed.append({'id':res.id,'name':res.name,'error':res.error})
+    return {'processed_count':len(processed),'failed_count':len(failed),'processed':processed,'failed':failed}
 
 
 @router.get('/customers/{cid}/timeline')

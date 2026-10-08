@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from services.api.db import init_db, uid, engine
-from services.api.security import rate_limit
+from services.api.security import rate_limit, auth_transport
 from services.api.pulse import router, public_chat_router
 from services.api import email_delivery
 from services.worker.ai import available
@@ -12,7 +12,8 @@ from services.worker.ai import available
 @asynccontextmanager
 async def lifespan(app):
     init_db()
-    yield
+    async with auth_transport():
+        yield
 
 app=FastAPI(title='ClientPulse AI',version='2.0.0',lifespan=lifespan,dependencies=[Depends(rate_limit)])
 app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000']+[origin for origin in os.getenv('WEB_ORIGINS','').split(',') if origin],allow_credentials=True,allow_methods=['GET','POST','PATCH','DELETE'],allow_headers=['Authorization','Content-Type'])

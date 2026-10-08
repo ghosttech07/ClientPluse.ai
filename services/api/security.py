@@ -1,23 +1,49 @@
-import os, hashlib, base64, json
+import os, hashlib, base64, json, asyncio
+from contextlib import asynccontextmanager
 from collections import defaultdict, deque
 from time import monotonic
 import httpx
 from fastapi import Header, HTTPException, Request
 
 _auth_cache = {}
+_auth_pending = {}
+_auth_client = None
+
+@asynccontextmanager
+async def auth_transport():
+    global _auth_client
+    _auth_client = httpx.AsyncClient(timeout=15, limits=httpx.Limits(max_connections=10, max_keepalive_connections=5))
+    try:
+        yield
+    finally:
+        pending=list(_auth_pending.values())
+        for task in pending:task.cancel()
+        if pending:await asyncio.gather(*pending,return_exceptions=True)
+        _auth_pending.clear()
+        await _auth_client.aclose()
+        _auth_client=None
+
+async def auth_account(authorization):
+    url=os.getenv('SUPABASE_URL');key=os.getenv('SUPABASE_ANON_KEY')
+    if not url or not key:raise HTTPException(503,'Supabase authentication is not configured.')
+    try:
+        if _auth_client is not None:
+            return await _auth_client.get(f'{url}/auth/v1/user',headers={'Authorization':authorization,'apikey':key})
+        async with httpx.AsyncClient(timeout=15) as client:
+            return await client.get(f'{url}/auth/v1/user',headers={'Authorization':authorization,'apikey':key})
+    except httpx.HTTPError:raise HTTPException(503,'Authentication service is unavailable. Please retry shortly.')
 
 async def user(authorization: str | None = Header(None)):
     if authorization and authorization.startswith('Bearer '):
         cache_key=hashlib.sha256(authorization.encode()).hexdigest()
         cached=_auth_cache.get(cache_key)
         if cached and cached[1]>monotonic():return cached[0]
-        url = os.getenv('SUPABASE_URL')
-        key = os.getenv('SUPABASE_ANON_KEY')
-        if not url or not key: raise HTTPException(503, 'Supabase authentication is not configured.')
-        try:
-            async with httpx.AsyncClient(timeout=15) as client:
-                r = await client.get(f'{url}/auth/v1/user', headers={'Authorization': authorization, 'apikey': key})
-        except httpx.HTTPError: raise HTTPException(503,'Authentication service is unavailable. Please retry shortly.')
+        task=_auth_pending.get(cache_key)
+        if task is None:
+            task=asyncio.create_task(auth_account(authorization));_auth_pending[cache_key]=task
+        try:r=await asyncio.shield(task)
+        finally:
+            if task.done() and _auth_pending.get(cache_key) is task:_auth_pending.pop(cache_key,None)
         if r.status_code != 200: raise HTTPException(401, 'Your session expired. Please sign in again.')
         identity=r.json()['id']
         if len(_auth_cache)>512:_auth_cache.clear()

@@ -19,7 +19,7 @@ export default function NeuralCore(){
   const container=useRef<HTMLDivElement>(null);
   useEffect(()=>{const observer=new IntersectionObserver(([entry])=>setVisible(entry.isIntersecting));if(container.current)observer.observe(container.current);return()=>observer.disconnect();},[]);
   useEffect(()=>{setReady(true);setReduced(matchMedia('(prefers-reduced-motion: reduce)').matches);},[]);
-  return <div ref={container} className="neural-canvas" style={{pointerEvents:'none'}} aria-label="Connected multimodal intelligence sphere">{ready?<SafeCanvas><Canvas frameloop={visible?(reduced?"demand":"always"):"never"} dpr={1} camera={{position:[0,0,6.7],fov:48}} gl={{antialias:true,alpha:true}}><Network reduced={reduced}/></Canvas></SafeCanvas>:<div className="sphere-fallback"/>}</div>;
+  return <div ref={container} className="neural-canvas" style={{pointerEvents:'none'}} aria-label="Connected multimodal intelligence sphere">{ready?<SafeCanvas><Canvas frameloop={visible?(reduced?"demand":"always"):"never"} dpr={1} camera={{position:[0,0,6.2],fov:48}} gl={{antialias:true,alpha:true}}><Network reduced={reduced}/></Canvas></SafeCanvas>:<div className="sphere-fallback"/>}</div>;
 }
 
 

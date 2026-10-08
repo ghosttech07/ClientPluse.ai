@@ -76,3 +76,61 @@
 .cp-chat-actions{position:relative}.cp-chat-menu-dismiss{position:fixed;inset:0;z-index:39;background:transparent;border:0;cursor:default!important}.cp-chat-menu{position:absolute;top:calc(100% + 6px);right:0;width:200px;padding:7px;background:var(--cp-panel);border:1px solid var(--cp-border);border-radius:12px;box-shadow:0 12px 35px #0002;z-index:40}.cp-chat-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;border-radius:7px;background:transparent;color:var(--cp-text);text-align:left}.cp-chat-menu button:hover{background:var(--cp-soft)}
 
 .cp-inline-action{padding:16px;margin:12px 0;border:1px solid var(--cp-border);border-radius:10px;background:var(--cp-panel)}.cp-inline-action .cp-filterbar{padding:12px 0 0}.cp-inline-action>button{margin-right:8px}
+/* Reserve a separate grid row for the globe: cards never cover its canvas. */
+.cp-effects .cp-hero-visual{grid-template-rows:none;min-height:0;align-items:start}
+.cp-effects .cp-hero-visual>.cp-visual-header{order:1;position:relative;margin:0}
+.cp-effects .cp-hero-visual>.cp-globe{order:2;position:relative;inset:auto;grid-column:1/-1;width:min(100%,380px);aspect-ratio:1;justify-self:center;overflow:hidden}
+.cp-effects .cp-hero-visual>.cp-signal{order:3;align-self:stretch}
+.cp-effects .cp-hero-visual>.cp-visual-output{order:4}
+
+/* Small compositor-only movements preserve the responsive card layout. */
+@keyframes cp-card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.cp-effects .cp-hero-visual>.cp-signal{animation:cp-card-float 5s ease-in-out infinite}
+.cp-effects .cp-hero-visual>.cp-signal:nth-of-type(4){animation-delay:-1.6s}
+.cp-effects .cp-hero-visual>.cp-signal:nth-of-type(5){animation-delay:-3.3s}
+@media(prefers-reduced-motion:reduce){.cp-effects .cp-hero-visual>.cp-signal{animation:none}}
+
+/* Align both hero columns and keep the animated cards on one baseline. */
+.cp-effects .cp-hero{align-items:start;min-height:0;padding-block:clamp(32px,4vw,64px) 64px;gap:clamp(24px,4vw,64px)}
+.cp-effects .cp-hero>div:first-child{min-width:0;padding-top:0}
+.cp-effects .cp-hero h1{font-size:clamp(38px,4vw,68px);line-height:1.12;margin:24px 0;letter-spacing:-.045em}
+.cp-effects .cp-hero p{max-width:650px}
+.cp-effects .cp-hero-visual{gap:20px;margin-top:0}
+.cp-effects .cp-hero-visual>.cp-globe{width:min(100%,300px)}
+.cp-effects .cp-hero-visual>.cp-signal:nth-of-type(n){animation-delay:0s;animation-duration:5s}
+@media(max-width:1100px){.cp-effects .cp-hero{grid-template-columns:1fr}.cp-effects .cp-hero h1{font-size:clamp(36px,6vw,60px)}}
+@media(max-width:520px){.cp-effects .cp-hero h1{font-size:clamp(32px,9vw,44px)}.cp-effects .cp-hero-visual{gap:16px}}
+
+/* A reserved square contains every point of the rotating cards' paths. */
+.cp-effects .cp-hero-visual>.cp-orbit-scene{order:2;grid-column:1/-1;position:relative;width:100%;aspect-ratio:1;max-width:740px;justify-self:center;isolation:isolate}
+.cp-orbit-globe{position:absolute;inset:27%;pointer-events:none}
+.cp-orbit-globe .neural-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cp-orbit-arm{position:absolute;inset:13%;animation:cp-orbit-turn 20.944s linear infinite;pointer-events:none}
+.cp-orbit-card{position:absolute;left:50%;top:0;width:24%;aspect-ratio:1;transform-origin:center;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:clamp(8px,1.1vw,16px);border:1px solid #b497cf40;border-radius:14px;background:#1e162c;color:#e9e5f2;box-shadow:0 8px 24px #0002;text-align:left;animation:cp-orbit-upright 20.944s linear infinite;translate:-50% -50%}
+.cp-orbit-card>span{color:#bc91ee;display:flex}.cp-orbit-card strong{font-size:clamp(10px,1.05vw,15px);line-height:1.2;overflow-wrap:anywhere}.cp-orbit-card small{font-size:clamp(9px,.8vw,12px);line-height:1.35;color:#b5adc5;overflow-wrap:anywhere}.cp-orbit-card>svg{position:absolute;right:8px;top:8px;color:#60ba9b;width:12px;height:12px}
+@keyframes cp-orbit-turn{from{transform:rotate(var(--orbit-angle))}to{transform:rotate(calc(var(--orbit-angle) + 360deg))}}
+@keyframes cp-orbit-upright{from{transform:rotate(calc(0deg - var(--orbit-angle)))}to{transform:rotate(calc(-360deg - var(--orbit-angle)))}}
+@media(max-width:520px){.cp-orbit-card{padding:8px;gap:4px;border-radius:10px}.cp-orbit-card small{display:none}.cp-orbit-card>span svg{width:18px;height:18px}}
+@media(prefers-reduced-motion:reduce){.cp-orbit-arm{animation:none;transform:rotate(var(--orbit-angle))}.cp-orbit-card{animation:none;transform:rotate(calc(0deg - var(--orbit-angle)))}}
+
+@media(max-width:520px){.cp-orbit-card{padding:4px;gap:3px}.cp-orbit-card strong{font-size:9px}.cp-orbit-card>svg{display:none}}
+
+.cp-orbit-card strong{font-size:clamp(9px,.9vw,13px)}
+@container(max-width:620px){.cp-orbit-card small{display:none}.cp-orbit-card{padding:6px;gap:4px}}
+@media(max-width:520px){.cp-orbit-card>span svg{width:14px;height:14px}.cp-orbit-card{padding:4px}}
+
+.cp-effects .cp-hero-visual>.cp-visual-header{order:3}
+
+.pulse.cp-signin{--cp-text:#f8f5ff;--cp-muted:#c5b7d7;--cp-border:#ffffff24;--cp-panel:#ffffff0d;--cp-soft:#ffffff12;--cp-accent:#ddd0ff;background:#050207;color:var(--cp-text)}
+.cp-signin-scene{min-height:100svh}.cp-signin-wrap{max-width:420px!important}.cp-signin-form{display:grid;gap:16px}.pulse .cp-signin input{width:100%}
+.pulse.cp-signin input{width:100%;padding:12px;background:#ffffff0d;color:white;border-color:#ffffff20}.pulse.cp-signin input::placeholder{color:#c5b7d799}.pulse.cp-signin .cp-auth-password input{padding-right:48px}.pulse.cp-signin .cp-auth-password button{color:#d8c9e8;background:transparent;border:0;right:8px;width:32px;height:32px}
+.pulse .cp-signin-submit,.pulse .cp-signin-google{display:flex;justify-content:center;align-items:center;gap:10px;width:100%;padding:12px;border-radius:9px;border:1px solid #ffffff24;font-weight:600;transition:background .2s,color .2s}
+.pulse .cp-signin-submit{background:white;color:#1a1026}.pulse .cp-signin-submit:hover{background:#e9dafa}.pulse .cp-signin-google{background:#ffffff0d;color:white}.pulse .cp-signin-google:hover{background:#ffffff20}.pulse .cp-signin-link{justify-self:end;background:none;border:0;color:#ded0ee;font-size:12px;padding:0}.pulse.cp-signin .cp-auth-toggle button{color:#f3eaff}.pulse.cp-signin .cp-auth-footer a{color:#e3c8ff}.pulse.cp-signin .cp-notice{overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.cp-signin-scene .animate-pulse{animation:none}}
+
+.cp-orbit-globe{inset:26%}
+.cp-orbit-card{width:23%}
+@media(min-width:1101px){.cp-effects .cp-hero-visual{margin-top:-20px}}
+
+.cp-signin-field{position:relative}.cp-signin-field>svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#c5b7d7;pointer-events:none}.pulse.cp-signin .cp-signin-field input{padding-left:40px}
+@media(max-width:1100px){.cp-effects .cp-hero-visual{margin-top:-12px}}

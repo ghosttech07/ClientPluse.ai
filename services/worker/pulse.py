@@ -12,7 +12,7 @@ from typing import Literal
 
 import httpx
 from pydantic import BaseModel, Field
-from sqlalchemy import select, delete, update
+from sqlalchemy import select, delete, update, or_, and_
 from services.api.db import Session, now, DATA
 from services.api import storage
 from services.api.pulse_models import Upload, Customer, Alias, Evidence, Communication, Complaint, ComplaintLink, Risk, Alert, AnalysisRun, Organization
@@ -212,7 +212,8 @@ def audio_extract(path):
     if provider!='deepgram':raise ValueError('SPEECH_PROVIDER must be sarvam or deepgram.')
     key=os.getenv('DEEPGRAM_API_KEY')
     if not key:raise ValueError('Deepgram is required for audio transcription. Add DEEPGRAM_API_KEY to the backend environment.')
-    with httpx.Client(timeout=90) as transport:
+    timeout_sec=int(os.getenv('SPEECH_TIMEOUT_SECONDS','60'))
+    with httpx.Client(timeout=timeout_sec) as transport:
         response=transport.post('https://api.deepgram.com/v1/listen',params={'model':'nova-3','smart_format':'true','diarize':'true','utterances':'true'},
             headers={'Authorization':'Token '+key,'Content-Type':'audio/wav' if path.suffix.lower()=='.wav' else 'audio/mpeg'},content=path.read_bytes())
         response.raise_for_status();result=response.json()['results']
@@ -224,10 +225,48 @@ def audio_extract(path):
     return items,{'extraction':'Deepgram nova-3','limitations':['Speaker numbers are not verified identities.']},False
 
 
-def process_upload(upload_id):
+def claim_upload(upload_id: str, organization_id: str | None = None) -> tuple[bool, str, Upload | None]:
+    with Session() as db:
+        query = select(Upload).where(Upload.id == upload_id)
+        if organization_id:
+            query = query.where(Upload.organization_id == organization_id)
+        upload = db.scalar(query)
+        if not upload:
+            return False, 'not_found', None
+        if upload.status in ('Ready', 'Partially Processed'):
+            return False, 'already_completed', upload
+        cutoff = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+        if upload.status == 'Processing' and upload.lease_at and upload.lease_at >= cutoff:
+            return False, 'already_processing', upload
+        if upload.status == 'Needs review' and not upload.customer_id:
+            return False, 'needs_customer', upload
+
+        conditions = [
+            Upload.id == upload_id,
+            or_(
+                Upload.status.in_(['Queued', 'Failed', 'Needs review']),
+                and_(Upload.status == 'Processing', or_(Upload.lease_at == None, Upload.lease_at < cutoff))
+            )
+        ]
+        if organization_id:
+            conditions.append(Upload.organization_id == organization_id)
+
+        claimed = db.execute(
+            update(Upload)
+            .where(*conditions)
+            .values(status='Processing', lease_at=now(), error=None)
+        )
+        db.commit()
+        if claimed.rowcount == 0:
+            return False, 'concurrent_claim', upload
+        return True, 'claimed', db.get(Upload, upload_id)
+
+
+def process_upload(upload_id, organization_id=None):
     with Session() as db:
         upload=db.get(Upload,upload_id)
-        if not upload:return
+        if not upload:return None
+        if organization_id and upload.organization_id!=organization_id:return None
         try:
             path=Path(upload.path)
             if not path.exists() and upload.meta.get('storage_key'):
@@ -269,21 +308,24 @@ def process_upload(upload_id):
             db.flush()
             upload.meta={**upload.meta,**meta}
             if not upload.customer_id:
-                upload.status='Needs review';upload.error='Assign a verified customer to analyze this communication.';db.commit();return
+                upload.status='Needs review';upload.error='Assign a verified customer to analyze this communication.';upload.lease_at=None;db.commit();return upload
             customer=db.get(Customer,upload.customer_id)
             result=analyse(evidence)
             db.add(AnalysisRun(organization_id=upload.organization_id,upload_id=upload.id,model=os.getenv('GEMINI_MODEL','gemini-3.1-flash-lite'),output=result.model_dump()))
             communication=db.scalar(select(Communication).where(Communication.upload_id==upload.id))
             if not communication:db.add(Communication(organization_id=upload.organization_id,customer_id=customer.id,upload_id=upload.id,channel=upload.source_type,occurred_at=upload.communication_at,identity_basis=meta.get('identity_basis','Explicit customer assignment')))
             correlate(db,customer,evidence,result)
-            upload.status='Partially Processed' if partial else 'Ready';upload.error=None;db.commit()
+            upload.status='Partially Processed' if partial else 'Ready';upload.error=None;upload.lease_at=None;db.commit()
+            return upload
         except Exception as error:
             db.rollback();upload=db.get(Upload,upload_id)
             if upload:
                 upload.status='Failed'
+                upload.lease_at=None
                 upload.error=str(error)[:350] if isinstance(error,ValueError) else 'Processing failed. Check the configured AI provider and retry.'
                 db.commit()
             logging.getLogger(__name__).error('ClientPulse processing failed upload=%s type=%s',upload_id,type(error).__name__)
+            return upload
 
 
 def run_once():
@@ -292,6 +334,8 @@ def run_once():
         db.execute(update(Upload).where(Upload.status=='Processing',Upload.lease_at<cutoff).values(status='Queued'));db.commit()
         item=db.scalar(select(Upload).where(Upload.status=='Queued').order_by(Upload.created_at).limit(1))
         if not item:return False
-        claimed=db.execute(update(Upload).where(Upload.id==item.id,Upload.status=='Queued').values(status='Processing',lease_at=now()));db.commit()
-        if claimed.rowcount:process_upload(item.id)
-    return True
+    claimed, reason, _ = claim_upload(item.id)
+    if claimed:
+        process_upload(item.id)
+        return True
+    return False

@@ -1,0 +1,2 @@
+import {DotsRing} from './ui/dots-ring';
+export function WorkspaceLoading({label='Loading your workspace'}:{label?:string}){return <div className="cp-skeleton-layout" role="status" aria-label={label}><div className="cp-loading-indicator"><DotsRing size={36}/><span>{label}</span></div><div className="cp-skeleton-stats" aria-hidden="true">{[0,1,2,3].map(i=><div className="cp-skeleton-stat" key={i}><span/><span/><span/></div>)}</div><div className="cp-skeleton-panel" aria-hidden="true"><span/><span/><span/><span/></div></div>;}

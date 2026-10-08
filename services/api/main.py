@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from services.api.db import init_db, uid, engine
 from services.api.security import rate_limit
 from services.api.pulse import router, public_chat_router
+from services.api import email_delivery
 from services.worker.ai import available
 
 @asynccontextmanager

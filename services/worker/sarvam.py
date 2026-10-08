@@ -21,17 +21,17 @@ def transcript_items(result):
     return items
 
 
-def transcribe(path):
+def transcribe(path, timeout=None):
     key=os.getenv('SARVAM_API_KEY')
     if not key:raise ValueError('Add SARVAM_API_KEY to the backend environment for Sarvam audio transcription.')
     from sarvamai import SarvamAI
     model=os.getenv('SARVAM_MODEL','saaras:v4')
     if model not in ('saaras:v3','saaras:v4'):raise ValueError('SARVAM_MODEL must be saaras:v3 or saaras:v4.')
-    client=SarvamAI(api_subscription_key=key,timeout=90)
+    timeout_sec=timeout or int(os.getenv('SPEECH_TIMEOUT_SECONDS','60'))
+    client=SarvamAI(api_subscription_key=key,timeout=timeout_sec)
     job=client.speech_to_text_job.create_job(model=model,mode='transcribe',language_code=os.getenv('SARVAM_LANGUAGE','unknown'),with_diarization=True,with_timestamps=True)
     job.upload_files(file_paths=[str(Path(path).resolve())]);job.start()
-    # Bound processing within the queue's 15-minute lease.
-    job.wait_until_complete(poll_interval=3,timeout=480)
+    job.wait_until_complete(poll_interval=3,timeout=timeout_sec)
     outcomes=job.get_file_results()
     if outcomes.get('failed') or not outcomes.get('successful'):
         raise ValueError('Sarvam could not transcribe this recording. Check audio format, language, provider quota and retry.')

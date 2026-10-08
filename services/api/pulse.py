@@ -25,7 +25,7 @@ def database():
     with Session() as db:yield db
 
 
-def tenant(u=Depends(user),db=Depends(database)):
+def organization(u=Depends(user),db=Depends(database)):
     member=db.scalar(select(m.Member).where(m.Member.auth_id==u))
     if member:return member.organization_id
     try:
@@ -39,6 +39,26 @@ def tenant(u=Depends(user),db=Depends(database)):
         member=db.scalar(select(m.Member).where(m.Member.auth_id==u))
         if member:return member.organization_id
         raise HTTPException(409,'Organization setup is in progress. Please retry.')
+
+
+def tenant(org=Depends(organization),db=Depends(database)):
+    if not db.get(m.Organization,org).settings.get('onboarding_completed'):
+        raise HTTPException(403,'Complete company setup before accessing your workspace.')
+    return org
+
+
+class CompanySetup(BaseModel):
+    name:str=Field(min_length=2,max_length=160)
+
+
+@router.post('/onboarding')
+def onboarding(body:CompanySetup,org=Depends(organization),db=Depends(database)):
+    name=body.name.strip()
+    if len(name)<2:raise HTTPException(422,'Enter your company name.')
+    row=db.get(m.Organization,org);row.name=name
+    row.settings={**row.settings,'onboarding_completed':True}
+    db.commit()
+    return {'name':name,'onboarding_required':False}
 
 
 def get(db,model,record_id,organization_id):
@@ -453,20 +473,21 @@ def report(did:str,org=Depends(tenant),db=Depends(database)):
 
 
 class Settings(BaseModel):
+    model_config={'extra':'forbid'}
     name:str=Field(min_length=2,max_length=160)
     retention_days:int=Field(default=365,ge=1,le=3650)
-    risk_weights:dict[str,int]=Field(default_factory=lambda:WEIGHTS.copy())
 
 
 @router.get('/settings')
-def settings(org=Depends(tenant),db=Depends(database)):
-    row=db.get(m.Organization,org);return {'name':row.name,'retention_days':row.settings.get('retention_days',365),'risk_weights':{**WEIGHTS,**row.settings.get('risk_weights',{})},'ai_configured':available(),'speech_provider':'Deepgram' if os.getenv('DEEPGRAM_API_KEY') else 'Configured Gemini / Hugging Face','database':'PostgreSQL' if db.bind.dialect.name=='postgresql' else 'SQLite development database'}
+def settings(org=Depends(organization),db=Depends(database)):
+    row=db.get(m.Organization,org);return {'name':row.name,'retention_days':row.settings.get('retention_days',365),'onboarding_required':not row.settings.get('onboarding_completed',False),'scoring_mode':'automatic','ai_configured':available(),'speech_provider':'Sarvam' if os.getenv('SPEECH_PROVIDER','deepgram')=='sarvam' else 'Deepgram','database':'PostgreSQL' if db.bind.dialect.name=='postgresql' else 'SQLite development database'}
 
 
 @router.patch('/settings')
 def update_settings(body:Settings,org=Depends(tenant),db=Depends(database)):
-    if set(body.risk_weights)!=set(WEIGHTS) or any(v<0 or v>100 for v in body.risk_weights.values()):raise HTTPException(422,'Risk weights must contain all documented factors with values from 0 to 100.')
-    row=db.get(m.Organization,org);row.name=body.name;row.settings=body.model_dump(exclude={'name'})
+    name=body.name.strip()
+    if len(name)<2:raise HTTPException(422,'Enter your company name.')
+    row=db.get(m.Organization,org);row.name=name;row.settings={**row.settings,'retention_days':body.retention_days}
     for customer in db.scalars(select(m.Customer).where(m.Customer.organization_id==org)):recalculate(db,customer)
     db.commit();return body
 

@@ -110,6 +110,7 @@ def test_tenant_isolation_and_citation_filter(client,customer,monkeypatch):
         assert not query_evidence(db,'another-organization','delivery')
     async def outsider():return 'another-owner'
     app.dependency_overrides[user]=outsider
+    assert client.post('/api/v1/onboarding',json={'name':'Other company'}).status_code==200
     assert client.get('/api/v1/customers/'+customer['id']).status_code==404
     assert client.get('/api/v1/uploads/'+upload['id']+'/content').status_code==404
     assert client.get('/api/v1/customers').json()==[]
@@ -245,3 +246,15 @@ def test_settings_validation_and_real_dashboard(client,customer):
     assert summary['total_customers']==1 and summary['high_risk_customers']==0
     assert summary['risk_distribution']['Insufficient evidence']==1
     assert client.patch('/api/v1/settings',json={'name':'My organization','risk_weights':{'invalid':9}}).status_code==422
+
+
+def test_company_setup_required_before_workspace_access(client):
+    with Session() as db:
+        org=db.scalar(select(m.Organization).where(m.Organization.owner_id=='test-owner'))
+        org.settings={};db.commit()
+    assert client.get('/api/v1/customers').status_code==403
+    assert client.get('/api/v1/settings').json()['onboarding_required'] is True
+    assert client.post('/api/v1/onboarding',json={'name':'  '}).status_code==422
+    assert client.post('/api/v1/onboarding',json={'name':'  Acme Ltd  '}).json()['name']=='Acme Ltd'
+    assert client.get('/api/v1/customers').status_code==200
+    assert client.get('/api/v1/settings').json()['onboarding_required'] is False

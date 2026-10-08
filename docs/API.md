@@ -28,7 +28,10 @@ Base: `/api/v1`. OpenAPI: `/docs` on the FastAPI server.
 | PATCH | /drafts/{id} | Edit content and record Draft/Approved status |
 | GET | /drafts/{id}/download | Generate a source-linked PDF |
 | GET | /dashboard/summary | Live SQL metrics, trends and priorities |
-| GET/PATCH | /settings | Organization, retention and risk weights |
+| GET/PATCH | /settings | Company, retention and automatic scoring status |
+| POST | /onboarding | Save company name and unlock the workspace |
 | POST | /retention/purge | Explicit irreversible expiry cleanup |
 
 Paged lists use offset >= 0 and limit 1–100. The initial UI loads up to 100 rows per list. Files accept at most 20 per request and 25 MB each. Uploaded HTML emails are shown as inert extracted text; scripts never execute in the evidence view. File access is never based solely on knowing a UUID.
+
+Authenticated users can read settings and complete onboarding before accessing other workspace endpoints. Missing company setup returns 403 for workspace data. Settings writes accept only company name and retention days; manual risk-weight fields are rejected. Risk updates automatically from analyzed evidence and resolution state.

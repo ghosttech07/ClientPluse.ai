@@ -2,7 +2,7 @@
 
 Detect customer dissatisfaction before it becomes customer churn.
 
-ClientPulse connects customer calls, emails, screenshots, tickets and documents into source-backed complaint cases, transparent risk factors, alerts and draft follow-ups. Dashboard values come from SQL records. A promise to fix a problem is not a resolution; risk scores are configurable review heuristics, not churn probabilities.
+ClientPulse connects customer calls, emails, screenshots, tickets and documents into source-backed complaint cases, transparent risk factors, alerts and draft follow-ups. Dashboard values come from SQL records. A promise to fix a problem is not a resolution; risk scores are automatic evidence-based review heuristics, not churn probabilities.
 
 ## Stack
 
@@ -28,6 +28,8 @@ SQLite can be used for isolated development and tests with DATABASE_URL=sqlite:/
 The current application is connected to Supabase PostgreSQL with TLS, private Storage and pgvector. There is no implicit SQLite fallback. To migrate another existing local database, stop API and worker, configure the Supabase DATABASE_URL, then run `python -m scripts.migrate_to_supabase --source data/evidence.db`. The tool saves a SQLite backup, refuses conflicting cloud records and verifies all copied rows before committing. Restart both services afterwards. Credentials and backups stay out of Git.
 
 ## Use the product
+
+After first sign-in, enter a company name on the required setup page. Company setup is enforced by the API as well as the frontend. Subsequent sign-ins open the existing workspace. The workspace logo opens the dashboard; the account menu shows the user's name, email and company with a sign-out option. Already signed-in users bypass the login page. Customer risk is updated automatically from AI-analyzed evidence and resolution status; manual risk-weight controls are not available.
 
 Sign in with Supabase Auth. Create a customer with an exact email/account identifier. Upload communications, optionally supplying their actual communication date. Unknown identities go to human review. Wait for Ready, then inspect the customer’s linked cases, risk factors and timeline. Ask the assistant a customer-scoped question and click source citations. Generate a follow-up or report, edit it, and approve it for your own use. Nothing is sent automatically.
 

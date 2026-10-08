@@ -21,5 +21,7 @@ def client():
     async def test_user(): return 'test-owner'
     app.dependency_overrides[user]=test_user
     try:
-        with TestClient(app) as c:yield c
+        with TestClient(app) as c:
+            assert c.post('/api/v1/onboarding',json={'name':'Test company'}).status_code==200
+            yield c
     finally: app.dependency_overrides.clear()

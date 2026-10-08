@@ -26,6 +26,7 @@ def main():
                 email=f'clientpulse-qa-{uuid4().hex}@example.com';password=secrets.token_urlsafe(24)
                 result=client.post(url+'/auth/v1/admin/users',headers=admin,json={'email':email,'password':password,'email_confirm':True});result.raise_for_status();owner_ids.append(result.json()['id'])
                 token=client.post(url+'/auth/v1/token?grant_type=password',headers={'apikey':anon},json={'email':email,'password':password});token.raise_for_status();created.append({'Authorization':'Bearer '+token.json()['access_token']})
+                setup=client.post(api+'/api/v1/onboarding',headers=created[-1],json={'name':'Synthetic QA company'});setup.raise_for_status()
                 if index==0:auth={'email':email,'password':password}
             owner,outsider=created
             result=client.post(api+'/api/v1/customers',headers=owner,json={'name':'SYNTHETIC QA Acme Retail','email':'customer0@clientpulse.example','account_ref':'QA-ACME'});result.raise_for_status();cid=result.json()['id'];customers.append(cid);auth['customer_id']=cid

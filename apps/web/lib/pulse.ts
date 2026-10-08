@@ -10,5 +10,5 @@ export type Alert={id:string;customer_id:string;complaint_id:string;title:string
 export type Draft={id:string;customer_id?:string;title:string;kind:string;content:string;status:string;citations:Source[]};
 export type Chat={id:string;role:string;content:string;citations:Source[]};
 export type Summary={total_customers:number;high_risk_customers:number;unresolved_complaints:number;critical_alerts:number;processing:number;risk_distribution:Record<string,number>;complaint_trend:{date:string;complaints:number}[];priority_customers:(Risk&{customer_id:string;name:string})[];priority_actions:Alert[]};
-export type Settings={name:string;retention_days:number;risk_weights:Record<string,number>;ai_configured?:boolean;speech_provider?:string;database?:string};
+export type Settings={name:string;retention_days:number;onboarding_required:boolean;scoring_mode:string;ai_configured?:boolean;speech_provider?:string;database?:string};
 export const pulse=<T>(path:string,init?:RequestInit)=>api<T>('/v1'+path,init);

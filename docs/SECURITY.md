@@ -10,6 +10,6 @@ Audit records log user, tenant, action and record ID; request logs omit tokens a
 
 Deletion removes related SQL records, original Storage objects and processing caches, plus drafts/history that copied deleted evidence and cached reports. Processing records cannot be deleted mid-job. Retention cleanup is explicit and destructive, with an in-product confirmation. Automatic scheduled purging is not enabled; schedule the documented owner-authorized purge operationally if required.
 
-LLM prompts treat source text as untrusted, separate customer/employee claims, validate citation IDs, and keep outbound actions as drafts. Source checking and human corrections remain necessary. The configurable risk score is a prioritization heuristic, not a statistically validated churn prediction.
+LLM prompts treat source text as untrusted, separate customer/employee claims, validate citation IDs, and keep outbound actions as drafts. Source checking and human corrections remain necessary. The automatic risk score is a prioritization heuristic, not a statistically validated churn prediction.
 
 Deployment needs HTTPS, private network/database credentials, backups, monitoring, a reviewed retention schedule and provider agreements appropriate for the data. In-memory request throttling is a single-process baseline; distributed deployments should add a shared rate limiter.

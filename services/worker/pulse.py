@@ -150,7 +150,7 @@ WEIGHTS={'high_severity':25,'repeat':15,'cancellation':40,'overdue':15,'escalati
 
 def recalculate(db, customer):
     organization=db.get(Organization,customer.organization_id)
-    weights={**WEIGHTS,**organization.settings.get('risk_weights',{})}
+    weights=WEIGHTS
     cases=list(db.scalars(select(Complaint).where(Complaint.customer_id==customer.id,Complaint.organization_id==customer.organization_id)))
     factors=[]; current=datetime.now(timezone.utc)
     for case in cases:

@@ -38,3 +38,31 @@
 .cp-user-menu{position:relative;flex-shrink:0}.pulse .cp-user-trigger{display:flex;align-items:center;gap:8px;padding:5px;border:0;border-radius:10px;background:transparent;color:var(--cp-text);max-width:220px}.cp-user-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.cp-user-popover{position:absolute;right:0;top:calc(100% + 10px);width:280px;max-width:calc(100vw - 32px);padding:18px;background:var(--cp-panel);border:1px solid var(--cp-border);border-radius:14px;box-shadow:0 15px 45px #0002;z-index:70;display:flex;flex-direction:column;gap:8px;overflow-wrap:anywhere}.cp-user-popover>span,.cp-user-popover>small{color:var(--cp-muted);font-size:12px}.cp-user-popover>a,.cp-user-popover>button{display:flex;gap:10px;align-items:center;padding:10px 8px;border:0;border-radius:8px;background:transparent;color:var(--cp-text);font:inherit;text-align:left}.cp-user-popover>a:hover,.cp-user-popover>button:hover{background:var(--cp-soft)}.cp-sidebar{overflow-y:auto}.cp-topbar>div{display:flex;align-items:center;gap:12px}.cp-effects .cp-landing-nav{gap:clamp(16px,3vw,50px)}@media(max-width:700px){.cp-user-name{display:none}.cp-topbar>div{gap:4px}.cp-effects .cp-landing-nav>.cp-user-menu{margin-left:auto}.cp-topbar>span{font-size:12px}.cp-effects .cp-landing-nav{gap:12px}}
 @media(max-width:700px){.cp-effects .cp-landing-nav>.cp-user-menu{display:block}}
 .cp-auth-brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}.cp-auth-brandbar .cp-brand{margin-bottom:0}.cp-auth-brandbar .cp-user-name{display:none}@media(min-width:701px) and (max-width:1000px){.cp-effects .cp-landing-nav .nav-links{display:none}.cp-effects .cp-landing-nav .nav-links.open{display:block;position:absolute;top:80px;left:24px;right:24px;background:var(--cp-panel);border:1px solid var(--cp-border);border-radius:14px;z-index:40}.cp-effects .cp-landing-menu{display:inline-grid}.cp-effects .cp-landing-nav>.cp-user-menu{margin-left:auto}}
+
+/* Rounded navigation with accessible focus and invisible scrollbars. */
+.pulse .cp-sidebar{width:288px;max-width:calc(100vw - 24px);padding:20px;background:var(--cp-sidebar);box-shadow:8px 0 30px #8b5cf610;scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:contain}
+.cp-sidebar::-webkit-scrollbar{display:none;width:0;height:0}
+.pulse .cp-sidebar nav{gap:8px}
+.pulse .cp-sidebar nav a,.pulse .cp-sidebar-action{display:flex;align-items:center;width:100%;gap:16px;padding:16px;border:0;border-radius:999px;font-size:16px;font-weight:600;line-height:24px;color:var(--cp-text);white-space:nowrap;background:transparent;transition:background-color .2s linear,color .2s linear,box-shadow .2s linear;position:relative;isolation:isolate;overflow:hidden}
+.pulse .cp-sidebar nav a>svg,.pulse .cp-sidebar-action>svg{width:24px;height:24px;flex-shrink:0}
+.pulse .cp-sidebar nav a:before,.pulse .cp-sidebar-action:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#b794f4,#7040df);opacity:0;transition:opacity .2s linear;pointer-events:none}
+.pulse .cp-sidebar nav a:hover,.pulse .cp-sidebar-action:hover{background:var(--cp-soft);box-shadow:inset 0 2px 8px #8b5cf620;color:var(--cp-text)}
+.pulse .cp-sidebar nav a.cp-active{background:var(--cp-soft);color:var(--cp-accent)}
+.pulse .cp-sidebar nav a:focus,.pulse .cp-sidebar-action:focus{color:#fff;outline:none;box-shadow:inset 0 2px 8px #5b21b620}
+.pulse .cp-sidebar nav a:focus:before,.pulse .cp-sidebar-action:focus:before{opacity:1}
+.pulse .cp-sidebar nav a:focus-visible,.pulse .cp-sidebar-action:focus-visible{outline:2px solid #9b7de8;outline-offset:2px}
+.pulse .cp-sidebar nav a:focus .cp-mini{background:#ffffff25;color:white}
+.cp-sidebar-action{margin-top:12px;text-align:left}
+@media(min-width:961px){.pulse .cp-main{margin-left:288px}}
+@media(max-width:960px){.pulse .cp-main{margin-left:0}.pulse .cp-sidebar{border-radius:0 16px 16px 0}}
+
+/* One hover highlight follows the pointer instead of retaining clicked focus. */
+.pulse .cp-tracking-nav{position:relative;isolation:isolate}
+.pulse .cp-nav-highlight{position:absolute;top:0;left:0;right:0;border-radius:999px;background:linear-gradient(90deg,#b794f4,#7040df);box-shadow:inset 0 2px 8px #5b21b620;pointer-events:none;transition:transform .2s linear,opacity .2s linear,height .2s linear;z-index:-1}
+.pulse .cp-tracking-nav a:focus:not(:focus-visible){color:var(--cp-text);box-shadow:none}
+.pulse .cp-tracking-nav a:focus:not(:focus-visible):before{opacity:0}
+.pulse .cp-tracking-nav a:hover{background:transparent;color:white;box-shadow:none}
+.pulse .cp-tracking-nav a:hover .cp-mini{color:white;background:#ffffff25}
+.pulse .cp-tracking-nav:has(a:hover) a.cp-active:not(:hover){background:transparent;color:var(--cp-text)}
+@media(prefers-reduced-motion:reduce){.pulse .cp-nav-highlight{transition:none}}
+.pulse .cp-sidebar .cp-tracking-nav a:hover{background:transparent;color:#fff;box-shadow:none}

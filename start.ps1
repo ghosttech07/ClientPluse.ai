@@ -10,6 +10,6 @@ $taskApi = Start-Process -FilePath $taskPython -ArgumentList '-m','uvicorn','ser
 $taskWorker = Start-Process -FilePath $taskPython -ArgumentList '-u','-m','services.worker.main' -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $taskLogs 'worker.log') -RedirectStandardError (Join-Path $taskLogs 'worker-error.log')
 $taskNode = (Get-Command node).Source
 $taskNext = Join-Path $taskRoot 'node_modules\next\dist\bin\next'
-$taskWeb = Start-Process -FilePath $taskNode -ArgumentList $taskNext,'dev','--webpack','--hostname','127.0.0.1' -WorkingDirectory (Join-Path $taskRoot 'apps\web') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $taskLogs 'web.log') -RedirectStandardError (Join-Path $taskLogs 'web-error.log')
+$taskWeb = Start-Process -FilePath $taskNode -ArgumentList ('"' + $taskNext + '"'),'dev','--webpack','--hostname','127.0.0.1' -WorkingDirectory (Join-Path $taskRoot 'apps\web') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $taskLogs 'web.log') -RedirectStandardError (Join-Path $taskLogs 'web-error.log')
 @{ api=$taskApi.Id; worker=$taskWorker.Id; web=$taskWeb.Id } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskLogs 'processes.json')
 Write-Host 'ClientPulse AI is starting at http://127.0.0.1:3000. Logs: data/logs. Stop with ./stop.ps1.'

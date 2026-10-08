@@ -34,8 +34,10 @@
 .pulse .cp-button:active {transform:translateY(1px)}
 .pulse .cp-button.cp-secondary {background:var(--cp-panel);border:1px solid var(--cp-border);color:var(--cp-text);box-shadow:none}
 .pulse .cp-button.cp-secondary:hover {background:var(--cp-soft);border-color:#ac9beb}
-.pulse .cp-button.cp-danger {background:#fff2f1;border:1px solid #ffc8c4;color:#ab2921}
-.pulse.cp-dark .cp-button.cp-danger {background:#382326;border-color:#704044;color:#ffc1bc}
+.pulse .cp-button.cp-danger {background:#fff2f1;border:1px solid #ffc8c4;color:#ab2921!important}
+.pulse .cp-button.cp-danger:hover {background:#ffe4e1;box-shadow:none}
+.pulse.cp-dark .cp-button.cp-danger {background:#382326;border-color:#704044;color:#ffc1bc!important}
+.pulse.cp-dark .cp-button.cp-danger:hover {background:#492c30;box-shadow:none}
 .pulse .cp-icon {width:44px;height:44px;min-width:44px;border-radius:10px}
 .pulse .cp-icon:hover {background:var(--cp-soft)}
 .pulse .cp-mobile {display:none}

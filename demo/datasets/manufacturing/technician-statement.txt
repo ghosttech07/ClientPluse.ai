@@ -1,0 +1,2 @@
+SYNTHETIC DEMONSTRATION DATA
+Technician statement about Machine A CV-204. On 2026-10-04 around 11:25 I heard a grinding noise near the drive assembly. The conveyor stopped around 11:30. I did not inspect the internal bearings or measure the belt tension. A worn belt and a bearing issue are possibilities to investigate, not confirmed diagnoses. Please check the sensor log and maintenance report with qualified personnel.

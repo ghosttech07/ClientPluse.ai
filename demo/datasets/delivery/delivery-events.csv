@@ -1,0 +1,6 @@
+timestamp,order,event,condition,source
+2026-10-03T08:10:00+05:30,ORD-1042,Packed,No damage recorded,Synthetic packing log
+2026-10-03T09:20:00+05:30,ORD-1042,Loaded,Condition not inspected,Synthetic dispatch log
+2026-10-03T11:05:00+05:30,ORD-1042,Transferred,Package condition unknown,Synthetic hub log
+2026-10-03T14:35:00+05:30,ORD-1042,Delivered,Marked intact by courier,Synthetic delivery log
+2026-10-03T14:55:00+05:30,ORD-1042,Complaint received,Crushed corner and cracked screen reported,Synthetic customer service log

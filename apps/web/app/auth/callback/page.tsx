@@ -1,0 +1,8 @@
+'use client';
+import {useEffect,useState} from 'react';
+import Link from 'next/link';
+import {useRouter} from 'next/navigation';
+import {LoaderCircle,ArrowRight,ShieldCheck} from 'lucide-react';
+import {Brand} from '@/components/brand';
+import {supabase} from '@/lib/api';
+export default function AuthCallback(){const [error,setError]=useState('');const router=useRouter();useEffect(()=>{let active=true;(async()=>{try{const url=new URL(location.href);if(url.searchParams.has('error')||new URLSearchParams(url.hash.slice(1)).has('error'))throw new Error('Google sign-in was canceled or could not be completed. Please try again.');if(!supabase)throw new Error('Account sign-in is not configured.');const {data,error}=await supabase.auth.getSession();if(error)throw error;if(!data.session)throw new Error('No sign-in session was returned. Please start again.');const verified=await supabase.auth.getUser();if(verified.error||!verified.data.user)throw new Error('Unable to verify your sign-in. Please try again.');if(active)router.replace('/dashboard');}catch(e){if(active)setError((e as Error).message);}})();return()=>{active=false;};},[router]);return <main className="auth-page"><header className="auth-nav"><Brand/></header><section className="auth-card callback-card">{error?<><h2>Let’s try that again.</h2><p role="alert">{error}</p><Link className="button primary" href="/login">Back to sign in <ArrowRight size={16}/></Link></>:<><LoaderCircle className="spin" size={30}/><h2>Finishing your sign-in.</h2><p>Verifying your account and opening your workspace.</p><ShieldCheck size={20}/></>}</section></main>;}

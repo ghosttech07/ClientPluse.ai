@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: evidence
+      POSTGRES_USER: evidence
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before running compose}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evidence"]
+      interval: 5s
+      retries: 10
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://evidence:${POSTGRES_PASSWORD}@postgres:5432/evidence
+      DATA_DIR: /app/data
+      DEMO_MODE: "false"
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: ["evidence_data:/app/data"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  worker:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    command: ["python", "-m", "services.worker.main"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://evidence:${POSTGRES_PASSWORD}@postgres:5432/evidence
+      DATA_DIR: /app/data
+      DEMO_MODE: "false"
+    volumes: ["evidence_data:/app/data"]
+    depends_on:
+      postgres: {condition: service_healthy}
+volumes:
+  postgres_data:
+  evidence_data:

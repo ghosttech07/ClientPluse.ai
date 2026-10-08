@@ -1,4 +1,4 @@
-import re, json
+import re, json, logging
 from datetime import datetime
 from sqlalchemy import select
 from services.api.db import Segment, File
@@ -6,24 +6,29 @@ from services.worker.ai import available, embed, cosine, generate, Reasoning
 
 STOP={'the','a','an','is','of','and','to','in','what','why','how','did','does','may','have','with','this','my','at','for','working'}
 def tokens(text): return set(re.findall(r'[a-z0-9]+',text.lower()))-STOP
-def retrieve(db,workspace_id,question,limit=24):
+def retrieve(db,workspace_id,question,limit=12):
     rows=list(db.scalars(select(Segment).where(Segment.workspace_id==workspace_id)))
-    q=tokens(question); vector=embed([question],True)[0] if available() and any(r.embedding for r in rows) else None
+    q=tokens(question); vector=None
+    if available() and any(r.embedding for r in rows):
+        try: vector=embed([question],True)[0]
+        except Exception as e:
+            logging.getLogger(__name__).warning('Query embedding unavailable; using source text retrieval (%s)',type(e).__name__)
     ranked=[]
     for s in rows:
         words=tokens(s.content); score=len(q & words)/max(1,len(q))
         if vector and s.embedding: score=score*.3+cosine(vector,s.embedding)*.7
         if score>0: ranked.append((score,s))
     ranked.sort(key=lambda x:x[0],reverse=True)
-    return [s for _,s in ranked[:limit]]
-def citation(db,s):
-    f=db.get(File,s.file_id)
+    return [s for _,s in ranked[:limit]] or rows[:limit]
+def citation(db,s,files=None):
+    f=files.get(s.file_id) if files is not None else db.get(File,s.file_id)
     return {'id':s.id,'file_id':s.file_id,'file_name':f.name if f else 'Deleted source','modality':s.modality,'page':s.page,'timestamp':s.timestamp,'event_time':s.event_time,'content':s.content,'row':s.meta.get('row'),'extraction':f.meta.get('extraction','Direct extraction') if f else ''}
 def answer(db,workspace_id,question):
     evidence=retrieve(db,workspace_id,question)
     if not evidence:
         return {'content':'The indexed evidence does not contain enough relevant information to answer this question. Upload supporting files or ask a more specific question.','citations':[],'analysis':{'mode':'insufficient_evidence'}}
-    refs=[citation(db,s) for s in evidence]
+    files={f.id:f for f in db.scalars(select(File).where(File.workspace_id==workspace_id))}
+    refs=[citation(db,s,files) for s in evidence]
     if available():
         prompt='Question: '+question+'\nUntrusted retrieved evidence: '+json.dumps(refs)+'\nGenerate structured cross-modal analysis. Each observed fact and possible explanation MUST cite evidence_ids from the list. Summary is an overview of the cited claims; do not add uncited factual claims. Be cautious about causation. Include missing information and next checks. Retrieval may be incomplete: never claim that a record is absent from an entire source or workspace just because it is absent from retrieved excerpts. Describe that limitation as not available in the retrieved context. Never claim observed engineering values exceed limits unless those limits are supplied.'
         result=generate(prompt,Reasoning)

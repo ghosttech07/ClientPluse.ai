@@ -1,4 +1,4 @@
-import time
+import time, logging
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 from services.api.db import Session, Job, File, init_db, now
@@ -20,4 +20,8 @@ if __name__=='__main__':
     init_db()
     print('Evidence worker ready. Waiting for durable processing jobs.')
     while True:
-        if not run_once(): time.sleep(1)
+        try:
+            if not run_once(): time.sleep(1)
+        except Exception as e:
+            logging.getLogger(__name__).error('Worker iteration failed (%s); retrying in 5 seconds',type(e).__name__)
+            time.sleep(5)

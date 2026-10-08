@@ -48,7 +48,7 @@ The `.env` and `apps/web/.env.local` files have been created with blank key fiel
 | Variable | Location | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | root `.env` | Secret server-only Gemini key |
-| `GEMINI_MODEL` | root `.env` | Model ID; default `gemini-3.8-flash`, verified against current Google docs during build |
+| `GEMINI_MODEL` | root `.env` | Model ID; default `gemini-3.1-flash-lite`, verified with live text and media requests; configurable fallback `gemini-3.8-flash` |
 | `EMBEDDING_MODEL` | root `.env` | Default `gemini-embedding-001`; 768 dimensions |
 | `SUPABASE_URL` | root `.env` | Your Supabase project URL |
 | `SUPABASE_ANON_KEY` | root `.env` | Publishable/anon key used to verify Auth users |

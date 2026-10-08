@@ -10,11 +10,11 @@ load_dotenv()
 DATA = Path(os.getenv('DATA_DIR', './data')).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
 URL = os.getenv('DATABASE_URL', f'sqlite:///{DATA / "evidence.db"}')
-engine = create_engine(URL, connect_args={'check_same_thread': False} if URL.startswith('sqlite') else {}, pool_pre_ping=True)
+engine = create_engine(URL, connect_args={'check_same_thread': False,'timeout':30} if URL.startswith('sqlite') else {}, pool_pre_ping=True)
 if URL.startswith('sqlite'):
     @event.listens_for(engine,'connect')
     def foreign_keys(connection,record):
-        cursor=connection.cursor();cursor.execute('PRAGMA foreign_keys=ON');cursor.close()
+        cursor=connection.cursor();cursor.execute('PRAGMA foreign_keys=ON');cursor.execute('PRAGMA journal_mode=WAL');cursor.execute('PRAGMA busy_timeout=30000');cursor.close()
 Session = sessionmaker(engine, expire_on_commit=False)
 def uid(): return str(uuid4())
 def now(): return datetime.now(timezone.utc).isoformat()

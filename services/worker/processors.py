@@ -1,9 +1,9 @@
-import csv, io, json, re, statistics, os, zipfile, subprocess, shutil
+import csv, io, json, re, statistics, os, zipfile, subprocess, shutil, logging
 from pathlib import Path
 from PIL import Image
 from sqlalchemy import select, delete, update
 from services.api.db import Session, File, Job, Segment, now
-from services.worker.ai import available, analyze_media, embed
+from services.worker.ai import available, analyze_media, embed, provider_error
 
 MIMES = {'.pdf':'application/pdf','.txt':'text/plain','.csv':'text/csv','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.mp3':'audio/mpeg','.wav':'audio/wav','.mp4':'video/mp4','.mov':'video/quicktime'}
 def binary(name):
@@ -120,7 +120,12 @@ def process(file_id):
             f.status='Processing'; f.error=None; db.commit()
             items,meta,partial=extract(Path(f.path),f.mime)
             vectors=None
-            if available(): vectors=embed([x['content'] for x in items])
+            if available():
+                try: vectors=embed([x['content'] for x in items])
+                except Exception as e:
+                    logging.getLogger(__name__).warning('Embedding unavailable for file %s (%s); preserving extracted evidence',file_id,type(e).__name__)
+                    meta['limitations']=[*meta.get('limitations',[]),'Semantic indexing is temporarily unavailable. Extracted evidence remains searchable by text.']
+                    meta['semantic_indexing']='unavailable'
             db.execute(delete(Segment).where(Segment.file_id==f.id))
             modality= 'document' if f.mime.startswith('application/') or f.mime=='text/plain' else 'data' if f.mime=='text/csv' else f.mime.split('/')[0]
             for i,item in enumerate(items):
@@ -131,5 +136,6 @@ def process(file_id):
         except Exception as e:
             db.rollback(); f=db.get(File,file_id)
             if f:
-                f.status='Failed'; f.error=str(e)[:350] if isinstance(e,ValueError) else 'Processing failed. Verify provider settings and retry.'
+                logging.getLogger(__name__).error('Processing failed for file %s (%s, code=%s)',file_id,type(e).__name__,getattr(e,'code',None))
+                f.status='Failed'; f.error=str(e)[:350] if isinstance(e,ValueError) else provider_error(e)
                 db.execute(update(Job).where(Job.file_id==f.id,Job.status=='Processing').values(status='Failed')); db.commit()

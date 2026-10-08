@@ -1,4 +1,4 @@
-import os, json, shutil
+import os, json, shutil, logging, time
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Literal
@@ -6,11 +6,11 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File as Upload,
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func, case
 from services.api.db import Session, DATA, init_db, Workspace, File, Segment, Job, Message, Report, Audit, uid
 from services.api.security import user, authorize, rate_limit
 from services.worker.processors import validate
-from services.worker.ai import available
+from services.worker.ai import available, provider_error
 from services.api.intelligence import answer, citation, timeline, graph
 from services.api.reports import make_report
 from services.api import storage
@@ -20,6 +20,14 @@ async def lifespan(app):
     init_db(); yield
 app=FastAPI(title='EVIDENCE.AI',version='1.0.0',lifespan=lifespan,dependencies=[Depends(rate_limit)])
 app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000']+os.getenv('WEB_ORIGINS','').split(','),allow_credentials=True,allow_methods=['GET','POST','PATCH','DELETE'],allow_headers=['Authorization','Content-Type'])
+
+@app.middleware('http')
+async def request_timing(request,call_next):
+    request_id=uid(); start=time.monotonic()
+    response=await call_next(request)
+    response.headers['X-Request-ID']=request_id
+    logging.getLogger('uvicorn.error').info('request=%s method=%s path=%s status=%s elapsed=%.2fs',request_id,request.method,request.url.path,response.status_code,time.monotonic()-start)
+    return response
 def database():
     with Session() as db: yield db
 def serialize(obj): return {c.name:getattr(obj,c.name) for c in obj.__table__.columns if c.name not in ('path','owner_id','synthetic')}
@@ -32,15 +40,20 @@ class Question(BaseModel): question: str=Field(min_length=2,max_length=4000)
 @app.get('/api/health')
 def health(): return {'status':'ok','gemini':available(),'auth':bool(os.getenv('SUPABASE_URL')),'storage':'private local storage','retrieval':'hybrid semantic + keyword' if available() else 'keyword retrieval'}
 @app.get('/api/workspaces')
-def workspaces(u=Depends(user),db=Depends(database)): return [serialize(w) for w in db.scalars(select(Workspace).where(Workspace.owner_id==u).order_by(Workspace.created_at.desc()))]
+def workspaces(u=Depends(user),db=Depends(database)):
+    rows=list(db.scalars(select(Workspace).where(Workspace.owner_id==u).order_by(Workspace.created_at.desc())))
+    counts={r[0]:r[1:] for r in db.execute(select(File.workspace_id,func.count(File.id),func.sum(case((File.status=='Ready',1),else_=0)),func.sum(case((File.status.in_(['Queued','Processing','Indexed']),1),else_=0))).join(Workspace,Workspace.id==File.workspace_id).where(Workspace.owner_id==u).group_by(File.workspace_id))}
+    return [{**serialize(w),'file_count':counts.get(w.id,(0,0,0))[0],'ready_count':counts.get(w.id,(0,0,0))[1],'processing_count':counts.get(w.id,(0,0,0))[2]} for w in rows]
 @app.post('/api/workspaces',status_code=201)
 def create(body:CreateWorkspace,u=Depends(user),db=Depends(database)):
     w=Workspace(owner_id=u,**body.model_dump()); db.add(w); db.commit(); log(db,u,w.id,'workspace.created'); return serialize(w)
 @app.get('/api/workspaces/{wid}')
 def workspace(wid:str,u=Depends(user),db=Depends(database)):
     w=authorize(db,wid,u); data=serialize(w)
-    data['files']=[serialize(f) for f in db.scalars(select(File).where(File.workspace_id==wid).order_by(File.created_at.desc()))]
-    data['segments']=[citation(db,s) for s in db.scalars(select(Segment).where(Segment.workspace_id==wid).limit(500))]
+    files=list(db.scalars(select(File).where(File.workspace_id==wid).order_by(File.created_at.desc())))
+    data['files']=[serialize(f) for f in files]
+    by_id={f.id:f for f in files}
+    data['segments']=[citation(db,s,by_id) for s in db.scalars(select(Segment).where(Segment.workspace_id==wid).limit(500))]
     return data
 @app.patch('/api/workspaces/{wid}')
 def update_workspace(wid:str,body:CreateWorkspace,u=Depends(user),db=Depends(database)):
@@ -105,7 +118,9 @@ def ask(wid:str,body:Question,u=Depends(user),db=Depends(database)):
     authorize(db,wid,u)
     try: result=answer(db,wid,body.question)
     except ValueError as e: raise HTTPException(502,str(e))
-    except Exception: raise HTTPException(502,'AI provider request failed. Check the key, model and quota, then retry.')
+    except Exception as e:
+        logging.getLogger(__name__).error('Answer failed (%s, code=%s)',type(e).__name__,getattr(e,'code',None))
+        raise HTTPException(502,provider_error(e))
     db.add(Message(workspace_id=wid,role='user',content=body.question))
     msg=Message(workspace_id=wid,role='assistant',**result); db.add(msg); db.commit(); log(db,u,wid,'question.answered'); return serialize(msg)
 @app.get('/api/workspaces/{wid}/messages')
@@ -132,5 +147,5 @@ def study(wid:str,u=Depends(user),db=Depends(database)):
     authorize(db,wid,u)
     try: return make_study(db,wid)
     except ValueError as e: raise HTTPException(400,str(e))
-    except Exception: raise HTTPException(502,'Study generation failed. Check Gemini configuration and retry.')
+    except Exception as e: raise HTTPException(502,provider_error(e))
 

@@ -1,4 +1,5 @@
 'use client';
+import NavHeader from '@/components/ui/nav-header';
 import SignInModal from '@/components/sign-in-modal';
 import SpecularButton from '@/components/SpecularButton/SpecularButton';
 import dynamic from 'next/dynamic';
@@ -14,7 +15,7 @@ const industryIcons=[Factory,GraduationCap,Shield,Package];
 export default function Home(){
   const [menu,setMenu]=useState(false),[signIn,setSignIn]=useState(false);
   return <main className="landing"><LiquidLandingBackground/>{signIn&&<SignInModal onClose={()=>setSignIn(false)}/>}
-    <header className="site-header"><div className="container nav"><Brand/><nav className={menu?'nav-links open':'nav-links'}><a href="#platform" onClick={()=>setMenu(false)}>Platform</a><a href="#industries" onClick={()=>setMenu(false)}>Solutions <ChevronDown size={12}/></a><a href="#how-it-works" onClick={()=>setMenu(false)}>How it works</a><a href="#trust" onClick={()=>setMenu(false)}>Why Evidence</a></nav><div className="nav-actions"><SpecularButton size="sm" className="mobile-menu icon-button" aria-label="Toggle navigation" aria-expanded={menu} onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</SpecularButton></div></div></header>
+    <header className="site-header"><div className="container nav"><Brand/><NavHeader open={menu} onNavigate={()=>setMenu(false)}/><div className="nav-actions"><SpecularButton size="sm" className="mobile-menu icon-button" aria-label="Toggle navigation" aria-expanded={menu} onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</SpecularButton></div></div></header>
     <section className="hero container"><div className="hero-copy"><div className="eyebrow-pill"><span className="live-dot"/> THE NEXT GENERATION OF MULTIMODAL AI <ArrowUpRight size={12}/></div><h1>Every format.<br/>One <span className="gradient-text">intelligence.</span></h1><p className="hero-description">Your evidence is everywhere.<br/>Your answers should be in one place.</p><p className="hero-subcopy">Transform disconnected videos, audio, documents, images, and structured data into connected, explainable intelligence.</p><div className="hero-actions"><SpecularButton className="landing-launch" tint="#9160c7" tintOpacity={0.65} lineColor="#ffffff" baseColor="#b497cf" onClick={()=>setSignIn(true)}>Launch Intelligence Workspace <ArrowRight size={17}/></SpecularButton><SpecularButton className="landing-explore" size="md" onClick={()=>{location.hash="how-it-works";}}><span className="play-circle"><Play size={11} fill="currentColor"/></span> Explore how it works</SpecularButton></div><div className="hero-assurance"><span><Check size={13}/> Every answer, source-backed</span><span><ShieldCheck size={13}/> Your evidence stays yours</span></div></div>
     <div className="hero-visual"><div className="orb-glow"/><NeuralCore/><div className="core-label"><span className="live-dot"/><span>INTELLIGENCE CORE</span></div><div className="floating-node node-doc"><FileText/><span>Documents<small>Context, extracted.</small></span></div><div className="floating-node node-video"><Video/><span>Video<small>Every moment matters.</small></span></div><div className="floating-node node-image"><Image/><span>Images<small>Beyond what you see.</small></span></div><div className="floating-node node-audio"><AudioLines/><span>Audio<small>Turn voices into insights.</small></span></div><div className="floating-node node-data"><Database/><span>Structured data<small>Find the signals.</small></span></div><div className="visual-caption"><span className="tiny-cross">+</span> CONNECTING THE DOTS. REVEALING THE STORY. <span className="tiny-cross">+</span></div></div></section>
     <section className="modality-strip container" id="platform"><span className="strip-label">MANY INPUTS.<br/><strong>ONE CONNECTED PICTURE.</strong></span><div>{modalityNames.map((name,i)=>{const Icon=icons[i];return <span key={name}><Icon size={19}/>{name}</span>;})}</div><span className="format-caption">Any evidence.<br/>Real understanding.</span></section>
@@ -25,6 +26,3 @@ export default function Home(){
     <footer className="container footer"><Brand/><span>Connected evidence. Explainable intelligence.</span><div><a href="#trust">Security</a><span>© {new Date().getFullYear()} EVIDENCE.AI</span></div></footer>
   </main>;
 }
-
-
-

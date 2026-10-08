@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import './tailwind.css';
 import './globals.css';
 import './light-theme.css';
 import './landing-fluid.css';

@@ -97,3 +97,21 @@
 .cp-effects .cp-hero-visual>.cp-signal:nth-of-type(n){animation-delay:0s;animation-duration:5s}
 @media(max-width:1100px){.cp-effects .cp-hero{grid-template-columns:1fr}.cp-effects .cp-hero h1{font-size:clamp(36px,6vw,60px)}}
 @media(max-width:520px){.cp-effects .cp-hero h1{font-size:clamp(32px,9vw,44px)}.cp-effects .cp-hero-visual{gap:16px}}
+
+/* A reserved square contains every point of the rotating cards' paths. */
+.cp-effects .cp-hero-visual>.cp-orbit-scene{order:2;grid-column:1/-1;position:relative;width:100%;aspect-ratio:1;max-width:740px;justify-self:center;isolation:isolate}
+.cp-orbit-globe{position:absolute;inset:27%;pointer-events:none}
+.cp-orbit-globe .neural-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cp-orbit-arm{position:absolute;inset:13%;animation:cp-orbit-turn 20.944s linear infinite;pointer-events:none}
+.cp-orbit-card{position:absolute;left:50%;top:0;width:24%;aspect-ratio:1;transform-origin:center;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:clamp(8px,1.1vw,16px);border:1px solid #b497cf40;border-radius:14px;background:#1e162c;color:#e9e5f2;box-shadow:0 8px 24px #0002;text-align:left;animation:cp-orbit-upright 20.944s linear infinite;translate:-50% -50%}
+.cp-orbit-card>span{color:#bc91ee;display:flex}.cp-orbit-card strong{font-size:clamp(10px,1.05vw,15px);line-height:1.2;overflow-wrap:anywhere}.cp-orbit-card small{font-size:clamp(9px,.8vw,12px);line-height:1.35;color:#b5adc5;overflow-wrap:anywhere}.cp-orbit-card>svg{position:absolute;right:8px;top:8px;color:#60ba9b;width:12px;height:12px}
+@keyframes cp-orbit-turn{from{transform:rotate(var(--orbit-angle))}to{transform:rotate(calc(var(--orbit-angle) + 360deg))}}
+@keyframes cp-orbit-upright{from{transform:rotate(calc(0deg - var(--orbit-angle)))}to{transform:rotate(calc(-360deg - var(--orbit-angle)))}}
+@media(max-width:520px){.cp-orbit-card{padding:8px;gap:4px;border-radius:10px}.cp-orbit-card small{display:none}.cp-orbit-card>span svg{width:18px;height:18px}}
+@media(prefers-reduced-motion:reduce){.cp-orbit-arm{animation:none;transform:rotate(var(--orbit-angle))}.cp-orbit-card{animation:none;transform:rotate(calc(0deg - var(--orbit-angle)))}}
+
+@media(max-width:520px){.cp-orbit-card{padding:4px;gap:3px}.cp-orbit-card strong{font-size:9px}.cp-orbit-card>svg{display:none}}
+
+.cp-orbit-card strong{font-size:clamp(9px,.9vw,13px)}
+@container(max-width:620px){.cp-orbit-card small{display:none}.cp-orbit-card{padding:6px;gap:4px}}
+@media(max-width:520px){.cp-orbit-card>span svg{width:14px;height:14px}.cp-orbit-card{padding:4px}}

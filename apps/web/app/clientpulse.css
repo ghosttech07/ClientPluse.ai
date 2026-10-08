@@ -72,3 +72,10 @@
 .pulse:not(.cp-landing) button,.pulse:not(.cp-landing) input,.pulse:not(.cp-landing) textarea,.pulse:not(.cp-landing) select{font-family:inherit}
 
 .cp-manual{width:100%;max-width:1000px;margin:auto;display:grid;gap:24px}.cp-manual header h1{margin-top:12px}.cp-manual-index,.cp-manual-chapter{padding:clamp(20px,3vw,32px);min-width:0}.cp-manual-index{display:grid;gap:12px}.pulse .cp-manual-index a{color:var(--cp-accent);padding:6px 0;overflow-wrap:anywhere}.cp-manual-chapter{scroll-margin-top:24px}.cp-manual-chapter p{margin:20px 0;line-height:1.8;overflow-wrap:anywhere}.cp-manual-chapter .cp-button{display:inline-flex;max-width:100%;white-space:normal}
+
+/* Reserve a separate grid row for the globe: cards never cover its canvas. */
+.cp-effects .cp-hero-visual{grid-template-rows:none;min-height:0;align-items:start}
+.cp-effects .cp-hero-visual>.cp-visual-header{order:1;position:relative;margin:0}
+.cp-effects .cp-hero-visual>.cp-globe{order:2;position:relative;inset:auto;grid-column:1/-1;width:min(100%,380px);aspect-ratio:1;justify-self:center;overflow:hidden}
+.cp-effects .cp-hero-visual>.cp-signal{order:3;align-self:stretch}
+.cp-effects .cp-hero-visual>.cp-visual-output{order:4}

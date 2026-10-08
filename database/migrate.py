@@ -17,5 +17,11 @@ def migrate():
                 for statement in source.read_text().split(';'):
                     if statement.strip():conn.execute(text(statement))
             conn.execute(text("INSERT INTO schema_versions(version,applied_at) VALUES (3,CURRENT_TIMESTAMP)"))
-    print('ClientPulse schema version 3 is ready.')
+        if not conn.scalar(text('SELECT version FROM schema_versions WHERE version=4')):
+            pulse_models.EmailDelivery.__table__.create(conn,checkfirst=True)
+            if engine.dialect.name=='postgresql':
+                conn.execute(text('ALTER TABLE cp_email_deliveries ENABLE ROW LEVEL SECURITY'))
+                conn.execute(text('REVOKE ALL ON cp_email_deliveries FROM anon, authenticated'))
+            conn.execute(text("INSERT INTO schema_versions(version,applied_at) VALUES (4,CURRENT_TIMESTAMP)"))
+    print('ClientPulse schema version 4 is ready.')
 if __name__=='__main__':migrate()

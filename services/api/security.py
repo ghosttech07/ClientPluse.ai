@@ -39,3 +39,17 @@ def rate_limit(request: Request):
     while q and q[0] < t - 60: q.popleft()
     if len(q) >= 90: raise HTTPException(429, 'Too many requests. Please wait a minute.')
     q.append(t)
+
+
+async def verified_email(authorization: str | None = Header(None)):
+    """Read reply-to from the authenticated provider, never from a form or JWT claim."""
+    identity=await user(authorization)
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response=await client.get(os.getenv('SUPABASE_URL','')+'/auth/v1/user',headers={'Authorization':authorization,'apikey':os.getenv('SUPABASE_ANON_KEY','')})
+        if response.status_code!=200:raise HTTPException(401,'Your session expired. Please sign in again.')
+        account=response.json()
+        if account.get('id')!=identity or not account.get('email') or not account.get('email_confirmed_at'):
+            raise HTTPException(403,'Verify your account email before sending customer email.')
+        return account['email']
+    except httpx.HTTPError:raise HTTPException(503,'Unable to verify your reply address. Please retry.')

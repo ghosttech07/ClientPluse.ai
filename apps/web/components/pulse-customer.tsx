@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useState} from 'react';
 import Link from 'next/link';
-import {ArrowLeft,UploadCloud,FileText,ArrowUpRight,LoaderCircle,Trash2,Check,Mail,Plus} from 'lucide-react';
+import {ArrowLeft,UploadCloud,FileText,ArrowUpRight,Trash2,Check,Mail,Plus} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {pulse,Customer,Source,Draft} from '@/lib/pulse';
 import {PulseShell} from './pulse-shell';

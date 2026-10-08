@@ -10,5 +10,5 @@ ClientPulse uses real customer uploads and provider responses. Dashboard data is
 - One owner organization is created per Supabase account. Team invitations, shared role administration, billing subscriptions, CRM connectors and live call streaming are not implemented.
 - Initial dashboard lists show up to 100 records; API endpoints support pagination. Large-tenant pagination UI and load testing remain deployment work.
 - Text redaction covers common payment-number and credential patterns; original media is not comprehensively anonymized. This is not a regulatory compliance certification.
-- Retention is configurable with an explicit purge action. Drafts are editable and require human approval; nothing sends email automatically.
+- Retention is configurable with an explicit purge action. Drafts are editable and require human approval; nothing sends email automatically. Approved follow-up emails can be explicitly sent through Resend after reviewing the recipient. A verified sender domain is required; provider acceptance does not confirm inbox delivery.
 - No public hosting deployment or PostgreSQL production load test has been completed. Existing legacy data remains intact; obsolete active screens and endpoints were removed.

@@ -150,3 +150,7 @@
 }
 
 @media(max-width:960px){.pulse .cp-sidebar{visibility:hidden}.pulse .cp-sidebar.cp-open{visibility:visible}}
+
+.cp-email-send{margin-top:24px;padding-top:24px;border-top:1px solid var(--cp-border)}.cp-email-send h3{display:flex;align-items:center;gap:8px}.cp-email-send dl{display:grid;gap:10px;font-size:12px;margin:20px 0}.cp-email-send dl>div{display:grid;grid-template-columns:100px 1fr;gap:12px}.cp-email-send dt{color:var(--cp-muted)}.cp-email-send dd{margin:0;overflow-wrap:anywhere}.cp-email-send form{display:grid;gap:16px}.pulse .cp-email-confirm{display:flex;flex-direction:row;align-items:flex-start;font-size:12px;font-weight:400;line-height:1.7}.pulse .cp-email-confirm input{width:18px;height:18px;min-height:18px;flex-shrink:0;margin:2px 0;accent-color:#6049df}.cp-email-send [role="status"]{overflow-wrap:anywhere}
+
+.cp-loading-indicator,.cp-route-loading{display:flex;align-items:center;justify-content:center;gap:16px;color:var(--cp-accent)}.cp-loading-indicator{padding:16px;font-size:13px}.cp-route-loading{flex-direction:column}.cp-auth-card p[role="status"]{display:flex;align-items:center;gap:16px}

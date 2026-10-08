@@ -157,3 +157,11 @@ class PulseAudit(TenantRecord, Base):
     user_id: Mapped[str] = mapped_column(String(64))
     action: Mapped[str] = mapped_column(String(80))
     record_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+
+class EmailDelivery(TenantRecord, Base):
+    __tablename__='cp_email_deliveries'
+    draft_id: Mapped[str]=mapped_column(ForeignKey('cp_generated_drafts.id',ondelete='CASCADE'),unique=True)
+    payload: Mapped[dict]=mapped_column(JSON)
+    status: Mapped[str]=mapped_column(String(20),default='Pending')
+    provider_id: Mapped[str | None]=mapped_column(String(100),nullable=True)

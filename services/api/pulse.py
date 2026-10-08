@@ -384,7 +384,7 @@ def ask(body:QueryBody,org=Depends(tenant),u=Depends(user),db=Depends(database))
         for customer in clients:
             recalculate(db,customer)
             risk=db.scalar(select(m.Risk).where(m.Risk.customer_id==customer.id))
-            cases=[case_detail(db,c) for c in db.scalars(select(m.Complaint).where(m.Complaint.customer_id==customer.id))]
+            cases=[{key:value for key,value in case_detail(db,c).items() if key!='evidence'} for c in db.scalars(select(m.Complaint).where(m.Complaint.customer_id==customer.id))]
             context.append({'id':customer.id,'name':customer.name,'risk':serialize(risk),'complaints':cases})
         if not available():raise HTTPException(503,'Configure Gemini on the backend to use the intelligence assistant.')
         try:
@@ -454,7 +454,10 @@ class DraftEdit(BaseModel):
 
 @router.patch('/drafts/{did}')
 def edit_draft(did:str,body:DraftEdit,org=Depends(tenant),db=Depends(database)):
-    row=get(db,m.Draft,did,org);row.content=body.content;row.status=body.status;db.commit();return serialize(row)
+    row=get(db,m.Draft,did,org)
+    if db.scalar(select(m.EmailDelivery).where(m.EmailDelivery.draft_id==did)):
+        raise HTTPException(409,'This draft has a send record and cannot be edited. Generate a new draft for changes.')
+    row.content=body.content;row.status=body.status;db.commit();return serialize(row)
 
 
 @router.get('/drafts/{did}/download')

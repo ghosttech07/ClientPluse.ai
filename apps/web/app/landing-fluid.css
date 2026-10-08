@@ -42,3 +42,8 @@
 .landing .sign-in-modal .text-link,.landing .sign-in-modal .auth-toggle button{color:#704395}
 .landing .sign-in-modal .icon-button{color:#704395}
 .landing .sign-in-modal .auth-card p{color:#62616b}
+/* Keep scrolling on the browser compositor; avoid repeatedly blurring live WebGL. */
+.landing .site-header{backdrop-filter:none;background:#100b1df2}
+.landing-liquid-background{height:100vh;contain:strict;transform:translateZ(0)}
+.landing:before{transform:translateZ(0)}
+.landing .floating-node,.landing .core-label{backdrop-filter:none}

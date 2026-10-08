@@ -15,7 +15,11 @@ function Network({ reduced }: { reduced: boolean }) {
 }
 class SafeCanvas extends Component<{children:React.ReactNode},{failed:boolean}> { state={failed:false}; static getDerivedStateFromError(){return {failed:true};} render(){return this.state.failed?<div className="sphere-fallback"/>:this.props.children;} }
 export default function NeuralCore(){
-  const [ready,setReady]=useState(false),[reduced,setReduced]=useState(false);
+  const [ready,setReady]=useState(false),[reduced,setReduced]=useState(false),[visible,setVisible]=useState(true);
+  const container=useRef<HTMLDivElement>(null);
+  useEffect(()=>{const observer=new IntersectionObserver(([entry])=>setVisible(entry.isIntersecting));if(container.current)observer.observe(container.current);return()=>observer.disconnect();},[]);
   useEffect(()=>{setReady(true);setReduced(matchMedia('(prefers-reduced-motion: reduce)').matches);},[]);
-  return <div className="neural-canvas" style={{pointerEvents:'none'}} aria-label="Connected multimodal intelligence sphere">{ready?<SafeCanvas><Canvas dpr={[1,1.5]} camera={{position:[0,0,6.7],fov:48}} gl={{antialias:true,alpha:true}}><Network reduced={reduced}/></Canvas></SafeCanvas>:<div className="sphere-fallback"/>}</div>;
+  return <div ref={container} className="neural-canvas" style={{pointerEvents:'none'}} aria-label="Connected multimodal intelligence sphere">{ready?<SafeCanvas><Canvas frameloop={visible?(reduced?"demand":"always"):"never"} dpr={1} camera={{position:[0,0,6.7],fov:48}} gl={{antialias:true,alpha:true}}><Network reduced={reduced}/></Canvas></SafeCanvas>:<div className="sphere-fallback"/>}</div>;
 }
+
+

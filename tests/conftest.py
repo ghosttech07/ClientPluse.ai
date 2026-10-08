@@ -6,6 +6,7 @@ root=root.resolve();root.mkdir(parents=True,exist_ok=True)
 os.environ['DATA_DIR']=str(root)
 os.environ['DATABASE_URL']='sqlite:///'+str(root/'tests.db')
 os.environ['GEMINI_API_KEY']=''
+os.environ['HF_ENABLED']='false'
 os.environ['STORAGE_PROVIDER']='local'
 import pytest
 from fastapi.testclient import TestClient

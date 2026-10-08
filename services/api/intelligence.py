@@ -1,25 +1,31 @@
-import re, json, logging
+import re, json, logging, os
 from datetime import datetime
 from sqlalchemy import select
 from services.api.db import Segment, File
 from services.worker.ai import available, embed, cosine, generate, Reasoning
+from services.worker import huggingface as hf
 
 STOP={'the','a','an','is','of','and','to','in','what','why','how','did','does','may','have','with','this','my','at','for','working'}
 def tokens(text): return set(re.findall(r'[a-z0-9]+',text.lower()))-STOP
 def retrieve(db,workspace_id,question,limit=12):
     rows=list(db.scalars(select(Segment).where(Segment.workspace_id==workspace_id)))
     q=tokens(question); vector=None
-    if available() and any(r.embedding for r in rows):
+    model_id=hf.embedding_id() if hf.enabled() else 'gemini:'+os.getenv('EMBEDDING_MODEL','gemini-embedding-001')
+    compatible=lambda r: r.meta.get('embedding_model', 'gemini:gemini-embedding-001')==model_id
+    if (available() or hf.enabled()) and any(r.embedding and compatible(r) for r in rows):
         try: vector=embed([question],True)[0]
         except Exception as e:
             logging.getLogger(__name__).warning('Query embedding unavailable; using source text retrieval (%s)',type(e).__name__)
     ranked=[]
     for s in rows:
         words=tokens(s.content); score=len(q & words)/max(1,len(q))
-        if vector and s.embedding: score=score*.3+cosine(vector,s.embedding)*.7
+        if vector and s.embedding and compatible(s): score=score*.3+cosine(vector,s.embedding)*.7
         if score>0: ranked.append((score,s))
     ranked.sort(key=lambda x:x[0],reverse=True)
-    return [s for _,s in ranked[:limit]] or rows[:limit]
+    candidates=[s for _,s in ranked[:max(limit,24)]] or rows[:max(limit,24)]
+    try: candidates=hf.rerank(question,candidates)
+    except Exception as e: logging.getLogger(__name__).warning('Reranking unavailable (%s); retaining retrieval order',type(e).__name__)
+    return candidates[:limit]
 def citation(db,s,files=None):
     f=files.get(s.file_id) if files is not None else db.get(File,s.file_id)
     return {'id':s.id,'file_id':s.file_id,'file_name':f.name if f else 'Deleted source','modality':s.modality,'page':s.page,'timestamp':s.timestamp,'event_time':s.event_time,'content':s.content,'row':s.meta.get('row'),'extraction':f.meta.get('extraction','Direct extraction') if f else ''}

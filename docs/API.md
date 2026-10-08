@@ -1,24 +1,34 @@
-# API reference
+# ClientPulse API
 
-Open `/docs` on the backend for generated OpenAPI schemas. All data endpoints require a verified Supabase bearer token. Unauthorized or cross-owner IDs return 404. Health reveals service capability booleans, not secrets.
+All private endpoints require `Authorization: Bearer <Supabase access token>`. Tenant identity is derived server-side. Missing authentication returns 401; inaccessible record IDs return 404. Errors use `detail`; provider messages omit secrets. UUID record IDs and request IDs are used throughout.
 
-| Method | Path | Behavior |
-|---|---|---|
-| GET | `/api/health` | Service capability status |
-| GET/POST | `/api/workspaces` | List own / create workspace |
-| GET/PATCH/DELETE | `/api/workspaces/{id}` | Get evidence summary / edit / delete |
-| GET/POST | `/api/workspaces/{id}/files` | Paginated inventory / multipart multi-file upload and queue |
-| GET | `/api/files/{id}` | File detail, status and errors |
-| GET | `/api/files/{id}/content` | Authorized original source or private signed URL |
-| POST | `/api/files/{id}/retry` | Requeue failed/partial extraction |
-| DELETE | `/api/files/{id}` | Delete file, jobs and segments |
-| POST | `/api/workspaces/{id}/ask` | `{question}` → saved grounded message, citations, analysis |
-| GET | `/api/workspaces/{id}/messages` | Stored conversation |
-| GET | `/api/workspaces/{id}/timeline` | Source-timestamped events |
-| GET | `/api/workspaces/{id}/graph` | Nodes, source-mentioned edges and evidence IDs |
-| GET/POST | `/api/workspaces/{id}/reports` | List / create PDF report |
-| GET | `/api/reports/{id}/download` | Authorized PDF download |
-| POST | `/api/workspaces/{id}/study` | Gemini study guide, flashcards and quiz |
+Base: `/api/v1`. OpenAPI: `/docs` on the FastAPI server.
 
-Upload is proxied through the authenticated API, not a two-stage signed upload flow. Formats are signature-verified where applicable. Processing is asynchronous in a separate worker. Failed AI requests do not persist fabricated assistant messages. Sources carry actual file IDs, segment IDs, pages/seconds/CSV rows when available.
+| Method | Route | Use |
+| --- | --- | --- |
+| GET/POST | /customers | Paged directory / create customer |
+| GET/PATCH/DELETE | /customers/{id} | Customer 360 / edit / delete related data |
+| POST | /customers/{id}/aliases | Explicit email/account/ticket identity alias |
+| GET | /customers/{id}/timeline | Source communication timeline |
+| GET | /customers/{id}/complaints | Customer complaint cases |
+| GET | /customers/{id}/risk | Explained score and contributing evidence |
+| GET/POST | /uploads | Paged library / multipart files, optional customer_id and communication_at |
+| GET | /uploads/{id} | Processing status, errors and extracts |
+| GET | /uploads/{id}/content | Authorized private original |
+| POST | /uploads/{id}/assign | Verify identity and queue analysis |
+| POST | /uploads/{id}/retry | Retry failed processing |
+| POST | /tickets | Manual communication queued for analysis |
+| GET | /evidence/{id} | Authorized source excerpt |
+| GET | /complaints | Paged cases, customer/status filters |
+| PATCH | /complaints/{id} | Human status correction with required note |
+| GET/PATCH | /alerts, /alerts/{id} | Paged alerts / status and owner |
+| POST | /intelligence/query | Question and optional customer_id |
+| GET | /intelligence/messages | Bounded conversation history, customer filter |
+| GET/POST | /drafts | Paged drafts / create one from source evidence |
+| PATCH | /drafts/{id} | Edit content and record Draft/Approved status |
+| GET | /drafts/{id}/download | Generate a source-linked PDF |
+| GET | /dashboard/summary | Live SQL metrics, trends and priorities |
+| GET/PATCH | /settings | Organization, retention and risk weights |
+| POST | /retention/purge | Explicit irreversible expiry cleanup |
 
+Paged lists use offset >= 0 and limit 1–100. The initial UI loads up to 100 rows per list. Files accept at most 20 per request and 25 MB each. Uploaded HTML emails are shown as inert extracted text; scripts never execute in the evidence view. File access is never based solely on knowing a UUID.

@@ -24,3 +24,10 @@ def remove(key):
     with httpx.Client(timeout=15) as c:
         r=c.request('DELETE',f'{url}/storage/v1/object/{bucket}',json={'prefixes':[key]},headers=headers)
         r.raise_for_status()
+
+def fetch(key):
+    url,headers,bucket=settings()
+    with httpx.Client(timeout=60) as c:
+        response=c.get(f'{url}/storage/v1/object/authenticated/{bucket}/{quote(key)}',headers=headers)
+        response.raise_for_status()
+        return response.content

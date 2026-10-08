@@ -2,7 +2,7 @@
 import {useRef,useState} from 'react';
 import {motion,useReducedMotion} from 'framer-motion';
 type Position={left:number;width:number;opacity:number};
-const links=[{label:'Platform',href:'#platform'},{label:'Solutions',href:'#industries'},{label:'How it works',href:'#how-it-works'},{label:'Why Evidence',href:'#trust'}];
+const links=[{label:'Platform',href:'#platform'},{label:'How it works',href:'#workflow'},{label:'Evidence & trust',href:'#trust'}];
 export default function NavHeader({open=false,onNavigate}:{open?:boolean;onNavigate?:()=>void}){
   const [position,setPosition]=useState<Position>({left:0,width:0,opacity:0});
   const reduced=useReducedMotion();

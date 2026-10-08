@@ -1,19 +1,13 @@
-# Deployment preparation
+# Deploy ClientPulse
 
-The website is prepared for local use and cloud deployment, but no hosting account or production credentials are assumed and no live deployment is claimed.
+Frontend: deploy the Next.js app on Vercel (root apps/web, install from the workspace root). Build uses supported Next webpack after a local Turbopack CSS-worker launch failure. Set API_URL to the deployed HTTPS FastAPI origin, plus NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. These values are required at build time. Configure Supabase Auth site URL and redirect allowlist for the deployed frontend and /auth/callback. Enable Google OAuth in Supabase if desired.
 
-## Frontend
+Backend: deploy services/api/Dockerfile on Render, Railway, Fly.io or another container host. Set DATABASE_URL to the Supabase session-pooler PostgreSQL connection (postgresql+psycopg scheme, SSL as appropriate). Set GEMINI_API_KEY, GEMINI_MODEL, EMBEDDING_MODEL, DEEPGRAM_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET=clientpulse, STORAGE_PROVIDER=supabase and WEB_ORIGINS to the frontend HTTPS origin. Do not expose the service key or provider keys in frontend variables.
 
-Import the project into Vercel with root directory `apps/web`. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and server `API_URL=https://your-api.example`. Build using `npm run build`. The Next.js rewrite proxies authenticated `/api` requests to FastAPI. Configure proxy/upload limits and timeouts for your plan; 25 MB uploads may require direct signed upload support if your frontend host rejects large bodies. That two-stage flow is not implemented.
+Worker: deploy the same image with `python -m services.worker.main`, sharing database and Storage settings. It polls SQL status with atomic claims and recovers stale 15-minute leases. The API and worker do not require a shared local disk when using Supabase Storage; missing caches are restored from private objects. Use persistent disk for caches if helpful.
 
-## Backend and worker
+Run `python -m database.migrate` with a migration-capable database role before serving traffic. Migration 003 creates ClientPulse tables, vector column/index and tenant read policies. Supabase pgvector must be available. Do not substitute a Supabase REST API key for the database password.
 
+No frontend/backend public deployment was provisioned automatically. No paid provider plan was activated. Live audio needs the selected Sarvam or Deepgram credentials; the selected production SQL/vector stack needs a working Supabase DATABASE_URL. Run real synthetic deployment verification after configuring these, including private originals and cross-account denial.
 
-Use one worker for this MVP. Lease expiry is 15 minutes; heartbeat extension/multi-worker concurrency and a Redis adapter are future work. Reports use private local volume storage. Use TLS and production monitoring.
-
-## Supabase
-
-Enable email/password Auth, configure redirects for signup and password recovery, and create a private `evidence` bucket if using optional storage. For account work, the server needs the public/anon key to validate `/auth/v1/user`. The service-role key is only needed for the optional private mirror; never expose it publicly. Apply database/storage policies after the initial schema when database tables are in Supabase public schema.
-
-## Acceptance before publication
-
+For a standalone local PostgreSQL development alternative, docker-compose uses pgvector/pgvector:pg17 and separate API/worker services. This is not the selected Supabase production database.

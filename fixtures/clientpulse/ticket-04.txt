@@ -1,0 +1,2 @@
+SYNTHETIC SUPPORT TICKET
+Customer Beacon Software: ticket TECH-103 is now fixed. We tested the login and confirm it works. This issue is resolved.

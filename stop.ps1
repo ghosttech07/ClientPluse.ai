@@ -1,10 +1,6 @@
-$taskPidPath = Join-Path $PSScriptRoot 'data\logs\processes.json'
-if (-not (Test-Path -LiteralPath $taskPidPath)) { Write-Host 'No saved Evidence.ai processes.'; exit }
-$taskSaved = Get-Content -LiteralPath $taskPidPath | ConvertFrom-Json
-foreach ($taskProperty in $taskSaved.PSObject.Properties) {
-    $taskPid = [int]$taskProperty.Value
-    $taskProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $taskPid" -ErrorAction SilentlyContinue
-    if ($taskProcess -and $taskProcess.CommandLine -and ($taskProcess.CommandLine -match 'services\.api\.main|services\.worker\.main|next\\dist\\bin\\next')) { Stop-Process -Id $taskPid -ErrorAction SilentlyContinue }
-}
-Remove-Item -LiteralPath $taskPidPath
-Write-Host 'Stopped the saved Evidence.ai processes.'
+$taskRoot = $PSScriptRoot
+$taskPidPath = Join-Path $taskRoot 'data\logs\processes.json'
+# Python environment launchers can spawn child interpreters; stop verified project commands too.
+Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($taskRoot) -and $_.CommandLine -match '-m (uvicorn services\.api\.main:app|services\.worker\.main)|next\\dist\\bin\\next' } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+if (Test-Path -LiteralPath $taskPidPath) { Remove-Item -LiteralPath $taskPidPath }
+Write-Host 'Stopped ClientPulse project services.'

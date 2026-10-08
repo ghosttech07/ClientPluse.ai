@@ -1,1 +1,2 @@
-import AccountSignIn from '@/components/account-sign-in'; export default function Login(){return <AccountSignIn/>;}
+import PulseLogin from '@/components/pulse-login';
+export default function Page(){return <PulseLogin/>;}

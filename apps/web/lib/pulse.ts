@@ -1,0 +1,14 @@
+import {api} from './api';
+export type Source={id:string;customer_id:string;file_id:string;file_name:string;content:string;page?:number;timestamp?:number;event_time?:string;modality:string};
+export type Factor={factor:string;points:number;complaint_id:string;evidence_ids:string[]};
+export type Risk={score:number|null;category:string;factors:Factor[]};
+export type Customer={id:string;name:string;email?:string;account_ref?:string;owner:string;notes:string;status:string;synthetic:boolean;risk:Risk;open_complaints:number;complaints?:Complaint[];files?:Upload[]};
+export type Upload={id:string;customer_id?:string;name:string;source_type:string;status:string;error?:string;created_at:string;communication_at?:string;meta:Record<string,unknown>;evidence?:Source[]};
+export type Finding={description:string;promise?:string;deadline?:string;sentiment:string;actor:string;uncertainty:string};
+export type Complaint={id:string;customer_id:string;category:string;description:string;severity:string;status:string;uncertainty:string;reference?:string;interaction_count:number;evidence:Source[];findings:Finding[]};
+export type Alert={id:string;customer_id:string;complaint_id:string;title:string;severity:string;status:string;owner:string;evidence_ids:string[];created_at:string;customer_name?:string};
+export type Draft={id:string;customer_id?:string;title:string;kind:string;content:string;status:string;citations:Source[]};
+export type Chat={id:string;role:string;content:string;citations:Source[]};
+export type Summary={total_customers:number;high_risk_customers:number;unresolved_complaints:number;critical_alerts:number;processing:number;risk_distribution:Record<string,number>;complaint_trend:{date:string;complaints:number}[];priority_customers:(Risk&{customer_id:string;name:string})[];priority_actions:Alert[]};
+export type Settings={name:string;retention_days:number;risk_weights:Record<string,number>;ai_configured?:boolean;speech_provider?:string;database?:string};
+export const pulse=<T>(path:string,init?:RequestInit)=>api<T>('/v1'+path,init);

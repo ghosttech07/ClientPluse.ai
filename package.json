@@ -1,1 +1,17 @@
-{"name":"evidence-ai","private":true,"workspaces":["apps/web"],"scripts":{"dev":"npm run dev --workspace apps/web","build":"npm run build --workspace apps/web","typecheck":"npm run typecheck --workspace apps/web","test":"python -m pytest tests -q"},"devDependencies":{"@ffmpeg-installer/ffmpeg":"^1.1.0","@ffprobe-installer/ffprobe":"^2.1.2"}}
+{
+  "name": "clientpulse-ai",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "typecheck": "npm run typecheck --workspace apps/web",
+    "test": "python -m pytest tests -q"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2"
+  }
+}

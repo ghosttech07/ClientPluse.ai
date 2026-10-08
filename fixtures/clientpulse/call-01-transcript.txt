@@ -1,0 +1,1 @@
+This is a synthetic fictional customer call. Customer Acme Retail: shipment ORD-1042 has not arrived. It was due yesterday. Please investigate.

@@ -15,12 +15,11 @@ from services.api.db import Base,engine
 from services.api.security import user
 @pytest.fixture
 def client():
+    from services.api.security import _requests
+    _requests.clear()
     Base.metadata.drop_all(engine);Base.metadata.create_all(engine)
     async def test_user(): return 'test-owner'
     app.dependency_overrides[user]=test_user
     try:
         with TestClient(app) as c:yield c
     finally: app.dependency_overrides.clear()
-@pytest.fixture
-def workspace(client):
-    return client.post('/api/workspaces',json={'name':'Test investigation','industry':'Manufacturing','description':'Test source-grounded flow'}).json()

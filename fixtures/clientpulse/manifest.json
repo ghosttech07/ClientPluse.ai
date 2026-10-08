@@ -1,0 +1,380 @@
+{
+  "label": "SYNTHETIC DEMONSTRATION DATA \u2014 fictional customers and communications",
+  "customers": [
+    {
+      "name": "Acme Retail",
+      "email": "customer0@clientpulse.example",
+      "account_ref": "SYN-000",
+      "synthetic": true
+    },
+    {
+      "name": "Northstar Analytics",
+      "email": "customer1@clientpulse.example",
+      "account_ref": "SYN-001",
+      "synthetic": true
+    },
+    {
+      "name": "Willow Logistics",
+      "email": "customer2@clientpulse.example",
+      "account_ref": "SYN-002",
+      "synthetic": true
+    },
+    {
+      "name": "Beacon Software",
+      "email": "customer3@clientpulse.example",
+      "account_ref": "SYN-003",
+      "synthetic": true
+    },
+    {
+      "name": "Lumen Design",
+      "email": "customer4@clientpulse.example",
+      "account_ref": "SYN-004",
+      "synthetic": true
+    },
+    {
+      "name": "Cedar Networks",
+      "email": "customer5@clientpulse.example",
+      "account_ref": "SYN-005",
+      "synthetic": true
+    },
+    {
+      "name": "Harbor Commerce",
+      "email": "customer6@clientpulse.example",
+      "account_ref": "SYN-006",
+      "synthetic": true
+    },
+    {
+      "name": "Atlas Systems",
+      "email": "customer7@clientpulse.example",
+      "account_ref": "SYN-007",
+      "synthetic": true
+    },
+    {
+      "name": "Spruce Media",
+      "email": "customer8@clientpulse.example",
+      "account_ref": "SYN-008",
+      "synthetic": true
+    },
+    {
+      "name": "Orchid Labs",
+      "email": "customer9@clientpulse.example",
+      "account_ref": "SYN-009",
+      "synthetic": true
+    },
+    {
+      "name": "Silverline Digital",
+      "email": "customer10@clientpulse.example",
+      "account_ref": "SYN-010",
+      "synthetic": true
+    },
+    {
+      "name": "Pinecrest Studio",
+      "email": "customer11@clientpulse.example",
+      "account_ref": "SYN-011",
+      "synthetic": true
+    }
+  ],
+  "files": [
+    {
+      "name": "ticket-01.txt",
+      "customer": "Acme Retail",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-02.txt",
+      "customer": "Northstar Analytics",
+      "communication_at": "2026-10-04T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-03.txt",
+      "customer": "Willow Logistics",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-04.txt",
+      "customer": "Beacon Software",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-05.txt",
+      "customer": "Lumen Design",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-06.txt",
+      "customer": "Cedar Networks",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-07.txt",
+      "customer": "Harbor Commerce",
+      "communication_at": "2026-10-04T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-08.txt",
+      "customer": "Atlas Systems",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-09.txt",
+      "customer": "Spruce Media",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-10.txt",
+      "customer": "Orchid Labs",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-11.txt",
+      "customer": "Acme Retail",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-12.txt",
+      "customer": "Northstar Analytics",
+      "communication_at": "2026-10-04T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-13.txt",
+      "customer": "Willow Logistics",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-14.txt",
+      "customer": "Beacon Software",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-15.txt",
+      "customer": "Lumen Design",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-16.txt",
+      "customer": "Cedar Networks",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-17.txt",
+      "customer": "Harbor Commerce",
+      "communication_at": "2026-10-04T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-18.txt",
+      "customer": "Atlas Systems",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-19.txt",
+      "customer": "Spruce Media",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "ticket-20.txt",
+      "customer": "Orchid Labs",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Ticket"
+    },
+    {
+      "name": "email-01.eml",
+      "customer": "Acme Retail",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-02.eml",
+      "customer": "Northstar Analytics",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-03.eml",
+      "customer": "Willow Logistics",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-04.eml",
+      "customer": "Beacon Software",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-05.eml",
+      "customer": "Lumen Design",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-06.eml",
+      "customer": "Cedar Networks",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-07.eml",
+      "customer": "Harbor Commerce",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-08.eml",
+      "customer": "Atlas Systems",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-09.eml",
+      "customer": "Spruce Media",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-10.eml",
+      "customer": "Orchid Labs",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-11.eml",
+      "customer": "Silverline Digital",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "email-12.eml",
+      "customer": "Pinecrest Studio",
+      "communication_at": "2026-10-05T10:00:00+00:00",
+      "channel": "Email"
+    },
+    {
+      "name": "chat-01.png",
+      "customer": "Acme Retail",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-02.png",
+      "customer": "Northstar Analytics",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-03.png",
+      "customer": "Willow Logistics",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-04.png",
+      "customer": "Beacon Software",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-05.png",
+      "customer": "Lumen Design",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-06.png",
+      "customer": "Cedar Networks",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-07.png",
+      "customer": "Harbor Commerce",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "chat-08.png",
+      "customer": "Atlas Systems",
+      "communication_at": "2026-10-07T10:00:00+00:00",
+      "channel": "Screenshot"
+    },
+    {
+      "name": "account-note-01.pdf",
+      "customer": "Acme Retail",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Document"
+    },
+    {
+      "name": "account-note-02.pdf",
+      "customer": "Northstar Analytics",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Document"
+    },
+    {
+      "name": "account-note-03.pdf",
+      "customer": "Willow Logistics",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Document"
+    },
+    {
+      "name": "account-note-04.pdf",
+      "customer": "Beacon Software",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Document"
+    },
+    {
+      "name": "account-note-05.pdf",
+      "customer": "Lumen Design",
+      "communication_at": "2026-10-06T10:00:00+00:00",
+      "channel": "Document"
+    },
+    {
+      "name": "call-01.wav",
+      "customer": "Acme Retail",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Audio"
+    },
+    {
+      "name": "call-02.wav",
+      "customer": "Northstar Analytics",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Audio"
+    },
+    {
+      "name": "call-03.wav",
+      "customer": "Willow Logistics",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Audio"
+    },
+    {
+      "name": "call-04.wav",
+      "customer": "Beacon Software",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Audio"
+    },
+    {
+      "name": "call-05.wav",
+      "customer": "Lumen Design",
+      "communication_at": "2026-10-03T10:00:00+00:00",
+      "channel": "Audio"
+    }
+  ],
+  "audio_generation": "Local Windows text-to-speech"
+}

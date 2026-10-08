@@ -1,10 +1,7 @@
 import csv, io, json, re, statistics, os, zipfile, subprocess, shutil, logging
 from pathlib import Path
 from PIL import Image
-from sqlalchemy import select, delete, update
-from services.api.db import Session, File, Job, Segment, now
-from services.worker.ai import available, analyze_media, embed, provider_error
-from services.worker import huggingface as hf
+from services.worker.ai import available, analyze_media
 
 MIMES = {'.pdf':'application/pdf','.txt':'text/plain','.csv':'text/csv','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.mp3':'audio/mpeg','.wav':'audio/wav','.mp4':'video/mp4','.mov':'video/quicktime'}
 def binary(name):
@@ -96,7 +93,7 @@ def extract(path, mime):
             event_time=next((r[c] for c in columns if c.lower() in ('timestamp','datetime','date','time') and r[c]),None)
             items.append({'content':f'Row {idx+2}: '+ '; '.join(f'{k}: {v}' for k,v in r.items()),'event_time':event_time,'meta':{'row':idx+2,'values':r}})
     else:
-        if not available() and not (hf.enabled() and mime.startswith(('image/','audio/'))): raise ValueError('Gemini API key is required for image, audio and video analysis. Add GEMINI_API_KEY to .env, then retry.')
+        if not available(): raise ValueError('Gemini API key is required for image, audio and video analysis. Add GEMINI_API_KEY to .env, then retry.')
         if mime.startswith('video/'):
             probe=binary('ffprobe')
             if not probe: raise ValueError('FFmpeg/ffprobe is required to validate video duration. Install FFmpeg and retry.')
@@ -104,21 +101,9 @@ def extract(path, mime):
             duration=float(json.loads(result.stdout)['format']['duration'])
             if duration>int(os.getenv('VIDEO_MAX_SECONDS','120')): raise ValueError('Please use a video of 120 seconds or less.')
             meta['duration']=duration
-        used_hf=False
-        if hf.enabled() and mime.startswith(('audio/','image/')):
-            try:
-                text=hf.transcribe(path) if mime.startswith('audio/') else hf.observe_image(path,mime)
-                add(text)
-                meta['extraction']='Hugging Face '+(os.getenv('HF_ASR_MODEL','openai/whisper-large-v3-turbo') if mime.startswith('audio/') else os.getenv('HF_VISION_MODEL','Qwen/Qwen3-VL-8B-Instruct'))
-                meta['limitations']=['Model output requires source verification. No timestamps were supplied.']
-                used_hf=True
-            except Exception as e:
-                if not available(): raise ValueError(hf.safe_error(e)) from None
-                meta['limitations']=[hf.safe_error(e)+' Gemini was used instead.']
-        if not used_hf:
-            result=analyze_media(path,mime)
-            items=[x.model_dump() for x in result.items if x.content.strip()]
-            meta['limitations']=[*meta.get('limitations',[]),*result.limitations]
+        result=analyze_media(path,mime)
+        items=[x.model_dump() for x in result.items if x.content.strip()]
+        meta['limitations']=result.limitations
         for item in items:
             ts=item.get('timestamp')
             if ts is not None and (ts<0 or ('duration' in meta and ts>meta['duration'])):raise ValueError('The model returned a media position outside the source. Please retry.')
@@ -126,30 +111,3 @@ def extract(path, mime):
     meta.setdefault('extraction','Gemini observation/transcription' if mime.startswith(('image/','audio/','video/')) else 'Direct extraction')
     if partial: meta['limitations']=['Some scanned pages could not be extracted without Gemini OCR.']
     return items,meta,partial
-def process(file_id):
-    with Session() as db:
-        f=db.get(File,file_id)
-        if not f: return
-        try:
-            f.status='Processing'; f.error=None; db.commit()
-            items,meta,partial=extract(Path(f.path),f.mime)
-            vectors=None
-            if available() or hf.enabled():
-                try: vectors=embed([x['content'] for x in items])
-                except Exception as e:
-                    logging.getLogger(__name__).warning('Embedding unavailable for file %s (%s); preserving extracted evidence',file_id,type(e).__name__)
-                    meta['limitations']=[*meta.get('limitations',[]),'Semantic indexing is temporarily unavailable. Extracted evidence remains searchable by text.']
-                    meta['semantic_indexing']='unavailable'
-            db.execute(delete(Segment).where(Segment.file_id==f.id))
-            modality= 'document' if f.mime.startswith('application/') or f.mime=='text/plain' else 'data' if f.mime=='text/csv' else f.mime.split('/')[0]
-            for i,item in enumerate(items):
-                db.add(Segment(workspace_id=f.workspace_id,file_id=f.id,modality=modality,content=item['content'],page=item.get('page'),timestamp=item.get('timestamp'),event_time=item.get('event_time'),meta={**item.get('meta',{}),'entities':item.get('entities',[]),'embedding_model':hf.embedding_id() if hf.enabled() else 'gemini:'+os.getenv('EMBEDDING_MODEL','gemini-embedding-001')},embedding=vectors[i] if vectors else None))
-            f.status='Indexed'; f.meta={**f.meta,**meta}; db.commit()
-            f.status='Partially Processed' if partial else 'Ready'
-            db.execute(update(Job).where(Job.file_id==f.id,Job.status=='Processing').values(status='Ready')); db.commit()
-        except Exception as e:
-            db.rollback(); f=db.get(File,file_id)
-            if f:
-                logging.getLogger(__name__).error('Processing failed for file %s (%s, code=%s)',file_id,type(e).__name__,getattr(e,'code',None))
-                f.status='Failed'; f.error=str(e)[:350] if isinstance(e,ValueError) else provider_error(e)
-                db.execute(update(Job).where(Job.file_id==f.id,Job.status=='Processing').values(status='Failed')); db.commit()

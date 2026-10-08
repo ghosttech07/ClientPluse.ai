@@ -1,118 +1,56 @@
-# EVIDENCE.AI
+# ClientPulse AI
 
-Every Format. One Intelligence.
+Detect customer dissatisfaction before it becomes customer churn.
 
-A responsive Next.js website with a FastAPI backend for persistent, source-linked investigation workspaces. The application supports Manufacturing, Education, Insurance, and E-commerce through a shared ingestion and retrieval engine.
+ClientPulse connects customer calls, emails, screenshots, tickets and documents into source-backed complaint cases, transparent risk factors, alerts and draft follow-ups. Dashboard values come from SQL records. A promise to fix a problem is not a resolution; risk scores are configurable review heuristics, not churn probabilities.
 
-## What works
+## Stack
 
-- Responsive landing page with an interactive React Three Fiber neural sphere and reduced-motion fallback.
-- Workspace creation, search, editing, and deletion; separate evidence, messages, graphs, timelines, and reports per workspace.
-- Real multi-file uploads with progress, MIME/signature verification, 25 MB limits, a durable background queue, errors, retries, and source previews.
-- PDF text with page references; scanned-page OCR using Gemini; DOCX paragraphs/tables; UTF-8 text; CSV statistics, missing values and 3-sigma outlier counts calculated from actual records.
-- Configurable Gemini image observation, timestamped audio transcription, and short-video analysis. No identity inference; no fabricated event dates. FFmpeg validates video duration.
-- Gemini embeddings and hybrid retrieval; keyword retrieval remains available without a provider key. Local mode returns matching passages and explicitly does **not** pretend to provide an AI diagnosis.
-- Structured Gemini cross-source reasoning, uncertainty, consistency checks, and source-ID validation. Chat history and export.
-- Cited PDF page, media position, image, text and CSV row previews.
-- Source-mentioned entity graph with evidence references; timestamp-only event timeline; CSV charts.
-- PDF reports using stored evidence and saved findings.
-- Source-grounded flashcards, quizzes with score and retry, and study guides (Gemini required).
-- Supabase signup, login, logout, password recovery/update, profile settings and account session handling when configured.
+Next.js, TypeScript, Tailwind CSS, Recharts; Python FastAPI, Pydantic and SQLAlchemy; Supabase Auth, PostgreSQL, private Storage and pgvector; Sarvam Saaras v4 (or Deepgram Nova-3) for audio; Gemini Vision, structured complaint reasoning and 768-dimensional embeddings. Gemini is the selected reasoning option; Groq is not required or integrated. No Hugging Face billing is needed for this stack.
 
-## Architecture and stack
+## Local setup
 
-Next.js 16 / React 19 / TypeScript / CSS design tokens / Lucide / React Three Fiber / React Flow / Recharts / safe Markdown. The frontend proxies `/api` to FastAPI. SQLAlchemy stores metadata in SQLite for zero-service local setup, or PostgreSQL through `DATABASE_URL`. The SQL queue is polled by a separate Python process. PyMuPDF, python-docx and standard-library CSV/statistics perform local extraction; Google Gen AI SDK handles configured multimodal understanding and embeddings. ReportLab produces PDFs.
+1. Install Node.js 22+, Python 3.12+ and uv (or use pip in a normal Python environment).
+2. Run `npm install` at the repository root.
+3. Create the Python environment: `uv venv .venv`, then `uv pip install --python .venv/Scripts/python.exe -r services/api/requirements.txt` on Windows. Linux uses `.venv/bin/python`.
+4. Copy `.env.example` to `.env` and fill the backend credentials. Never commit this file.
+5. Set `DATABASE_URL` to the Supabase PostgreSQL connection string using the `postgresql+psycopg://` scheme. Use the session pooler on an IPv4-only host; URL-encode the password. A Supabase API service-role key is not a PostgreSQL password.
+6. Create a private Supabase Storage bucket named `clientpulse` with a 25 MB size limit. Set STORAGE_PROVIDER=supabase.
+7. Set SPEECH_PROVIDER=sarvam and add SARVAM_API_KEY plus GEMINI_API_KEY. Deepgram is an alternative with SPEECH_PROVIDER=deepgram and DEEPGRAM_API_KEY. Audio fails explicitly when the selected provider is not configured.
+8. In `apps/web/.env.local`, set NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY and API_URL=http://127.0.0.1:8000. These public variables never contain service keys.
+9. Apply `python -m database.migrate`. PostgreSQL migration installs vector support and tenant read policies. Alternatively apply `database/migrations/003_clientpulse.sql` in Supabase SQL Editor. Use a backend database role allowed to perform the migration.
+10. Start Windows services with `./start.ps1`. Open http://127.0.0.1:3000. Stop with `./stop.ps1`.
 
-The implementation uses CSS instead of Tailwind/shadcn for a coherent bespoke visual system, SQL leases instead of Redis for a simple durable single-worker MVP, and JSON embedding vectors plus cosine search instead of a pgvector query index at this scale. These are deliberate simplifications; see [limitations](docs/LIMITATIONS.md) for differences from the full master brief.
+For separate terminals: `python -m uvicorn services.api.main:app --port 8000`, `python -m services.worker.main`, and `npm run dev`. API and worker use the same database and bucket. The worker can restore its processing cache from private Storage when its local file is missing.
 
-## Prerequisites
+SQLite can be used for isolated development and tests with DATABASE_URL=sqlite:///./data/evidence.db and STORAGE_PROVIDER=local. This does not satisfy or verify the requested production Supabase PostgreSQL/pgvector configuration.
 
-Node.js 22+, npm, Python 3.11+, and FFmpeg/ffprobe for videos. A Gemini API key enables AI reasoning, embeddings, image/audio/video analysis and scanned PDF OCR. Supabase is required for real accounts. Do not expose secret provider or service-role keys in browser environment settings.
+## Use the product
 
-## Install on Windows
+Sign in with Supabase Auth. Create a customer with an exact email/account identifier. Upload communications, optionally supplying their actual communication date. Unknown identities go to human review. Wait for Ready, then inspect the customer’s linked cases, risk factors and timeline. Ask the assistant a customer-scoped question and click source citations. Generate a follow-up or report, edit it, and approve it for your own use. Nothing is sent automatically.
 
-From `E:\evidence.ai`:
+Supported core inputs: PDF, DOCX, TXT, CSV, EML, PNG/JPG/WEBP and MP3/WAV. Manually entered tickets use the same background pipeline. Scanned PDFs use Gemini for OCR. Upload and analysis failures are visible and retryable. Private originals are retrieved after server-side authorization.
 
-```powershell
-npm install
-python -m venv .venv
-python -m pip --python .venv install -r services/api/requirements.txt
-```
+## Synthetic demonstration
 
-If you prefer a normal virtual environment pip, use `.\.venv\Scripts\python.exe -m pip install -r services/api/requirements.txt`.
+`fixtures/clientpulse` contains 12 fictional customer definitions, 20 tickets, 12 emails, 8 chat screenshots, 5 spoken synthetic WAV files and 5 PDFs. Inputs are labelled; no analysis results are seeded. Two customers have neutral communications and insufficient complaint evidence. Three accounts have cross-channel recurring issues; two have explicit cancellation statements.
 
-The `.env` and `apps/web/.env.local` files have been created with blank key fields. Fill them in, then **restart the API, worker and frontend** after any credential changes. `.env` is a file, not a folder.
+For Acme, upload call-01.wav (Oct 3), email-01.eml (Oct 5), and chat-01.png (Oct 7), assigning them to the same customer. They share ORD-1042. Expected: one linked delivery case, three interactions, an escalation/cancellation signal, an explained risk score, and a draft follow-up.
 
-## Environment
+An explicit importer is available: `python -m scripts.import_clientpulse_demo --user-id YOUR_AUTH_USER_UUID`. It creates labelled synthetic customers and queues the three flagship files for real processing. Add `--all-files` to queue all 50 inputs. It does not run automatically or bypass authentication.
 
-| Variable | Location | Purpose |
-|---|---|---|
-| `GEMINI_API_KEY` | root `.env` | Secret server-only Gemini key |
-| `GEMINI_MODEL` | root `.env` | Model ID; default `gemini-3.1-flash-lite`, verified with live text and media requests; configurable fallback `gemini-3.8-flash` |
-| `EMBEDDING_MODEL` | root `.env` | Default `gemini-embedding-001`; 768 dimensions |
-| `SUPABASE_URL` | root `.env` | Your Supabase project URL |
-| `SUPABASE_ANON_KEY` | root `.env` | Publishable/anon key used to verify Auth users |
-| `DATABASE_URL` | root `.env` | Default SQLite; production `postgresql+psycopg://...` |
-| `DATA_DIR` | root `.env` | Private persistent uploads/reports; shared by API and worker |
-| `STORAGE_PROVIDER` | root `.env` | `local` or `supabase` |
-| `SUPABASE_SERVICE_ROLE_KEY` | root `.env` | Secret backend-only key for optional private storage mirror |
-| `SUPABASE_STORAGE_BUCKET` | root `.env` | Private bucket name, default `evidence` |
-| `WEB_ORIGINS` | root `.env` | Comma-separated production frontend origins |
-| `NEXT_PUBLIC_SUPABASE_URL` | `apps/web/.env.local` | Same Supabase URL, for browser Auth |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `apps/web/.env.local` | Same public/anon key, never a service-role key |
-| `API_URL` | `apps/web/.env.local` | Backend destination, default `http://127.0.0.1:8000` |
-
-Create a Supabase project, enable email/password authentication and add `http://127.0.0.1:3000/dashboard` and `http://127.0.0.1:3000/login` as allowed redirect URLs (and production equivalents). Supabase handles passwords; this application stores no passwords. Backend Auth validates bearer sessions through Supabase `/auth/v1/user` on every authenticated request.
-
-For Supabase storage, create a **private** `evidence` bucket. Set `STORAGE_PROVIDER=supabase` and the service-role key on the backend. Files are mirrored to owner/workspace-specific keys. The API authorizes ownership before issuing 120-second signed URLs. Keep a persistent local volume mounted in API and worker for processing. Private mirror and signed URL integration are implemented but require live credentials to verify.
-
-## Start
-
-Conveniently run `./start.ps1`. It starts the three services with hidden helper windows and writes logs in `data/logs`. To stop only those saved processes, run `./stop.ps1`.
-
-Or use three terminals from the project root:
-
-```powershell
-# Backend
-.\.venv\Scripts\python.exe -m uvicorn services.api.main:app --host 127.0.0.1 --port 8000
-# Background worker
-.\.venv\Scripts\python.exe -m services.worker.main
-# Website
-npm run dev
-```
-
-Open [the local website](http://127.0.0.1:3000) and [API documentation](http://127.0.0.1:8000/docs).
-
-The worker must run; uploading alone queues a file. Files remain Queued until the worker claims them. Failed files retain a visible error and can be retried after fixing configuration. PDF/image/audio/video extraction and indexing must finish before Ready is set. External AI calls execute in the worker or a FastAPI thread, not in the browser.
-
-## Database
-
-SQLite tables are created on startup. PostgreSQL can use the same SQLAlchemy schema. For explicit versioned schema setup run `python -m database.migrate` using the project virtual environment. It records applied SQLAlchemy schema versions. See `database/migrations/001_initial.sql` for the equivalent PostgreSQL DDL and `002_supabase_policies.sql` for optional Supabase RLS/storage hardening. Restrict the backend database connection to a server role; do not allow clients to write through PostgREST.
-
-## Real uploads
-
-Sign in, create a workspace, and upload your own evidence. Extraction, answers, and reports use those uploaded sources.
+Regenerate fixtures on Windows with `python -m scripts.generate_clientpulse_data`; local speech synthesis creates labelled spoken audio. Costs for processing synthetic inputs depend on configured providers.
 
 ## Checks
 
-```powershell
-npm run typecheck
-npm run build
-.\.venv\Scripts\python.exe -m pytest tests -q --basetemp=data/pytest-temp
-# Opt-in real provider check after adding Gemini credentials:
-.\.venv\Scripts\python.exe -m tests.smoke_gemini
-# Opt-in live five-modality check after uploading the clearly labeled QA fixtures:
-.\.venv\Scripts\python.exe -m tests.live_pipeline
-# With explicit permission to create and remove disposable Supabase accounts:
-.\.venv\Scripts\python.exe -m tests.smoke_supabase
-```
+`python -m pytest tests -q` runs provider-mocked integration tests. `npm run typecheck` and `npm run build` verify the web app. `python -m tests.live_clientpulse` is an opt-in synthetic live test that creates and deletes two confirmed Supabase QA accounts without sending emails; run only with explicit authorization. It verifies sign-in, storage, correlation, risk, source filtering, Gemini answers, drafts and PDF generation. Without a key for the selected speech provider it uses the labelled transcript and explicitly leaves audio unverified.
 
-External providers are mocked in automated tests. The real smoke script fails with an explicit missing-key message rather than pretending success. See `docs/VERIFICATION.md` for actual executed results.
+## Documentation
 
-## Deploy
+- [Architecture](docs/ARCHITECTURE.md)
+- [Versioned API](docs/API.md); live OpenAPI at http://127.0.0.1:8000/docs
+- [Deployment](docs/DEPLOYMENT.md)
+- [Security](docs/SECURITY.md)
+- [Verification and remaining limitations](docs/VERIFICATION.md)
 
-Google sign-in is available through Supabase OAuth. Enable the Google provider and configure the client credentials and redirect addresses described in [Google sign-in setup](docs/GOOGLE_SIGN_IN.md). Google OAuth secrets belong in Supabase's provider settings, never in browser environment variables.
-
-Frontend: Vercel, root directory `apps/web`, build `npm run build`; configure the public Supabase settings and `API_URL` pointing to an HTTPS Python backend. Set public settings before building. Backend: Docker/Python host with a persistent volume at `/app/data`, PostgreSQL, and the same env settings for API and worker. Require authenticated access, restrict origins, provide secrets privately and use HTTPS. Docker Compose provides a local PostgreSQL + API + worker deployment.
-
-No cloud deployment is performed or claimed in this build. PostgreSQL, Supabase Auth/storage and live Gemini require service setup and live verification. See [deployment](docs/DEPLOYMENT.md), [security](docs/SECURITY.md), [architecture](docs/ARCHITECTURE.md), [API](docs/API.md).
+The previous Evidence.ai UI, domain-specific APIs, study mode and graph screens have been retired. Legacy schema definitions/migrations and original user data remain intact to avoid destructive migration. New customer records live in cp_* tables. The existing GitHub repository remains the delivery location.

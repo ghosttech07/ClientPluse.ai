@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from uuid import uuid4
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, String, Text, ForeignKey, JSON, Integer, Float, event
+from sqlalchemy import create_engine, String, Text, ForeignKey, JSON, Integer, Float, event, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 load_dotenv()
@@ -84,4 +84,6 @@ class Audit(Base):
     workspace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     action: Mapped[str] = mapped_column(String(50))
     created_at: Mapped[str] = mapped_column(String(40), default=now)
-def init_db(): Base.metadata.create_all(engine)
+def init_db():
+    from database.migrate import migrate
+    migrate()

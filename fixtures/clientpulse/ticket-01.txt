@@ -1,0 +1,2 @@
+SYNTHETIC SUPPORT TICKET
+Customer Acme Retail: shipment ORD-1042 has not arrived. It was due yesterday. Please investigate.

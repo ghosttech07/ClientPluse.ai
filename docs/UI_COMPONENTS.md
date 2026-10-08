@@ -1,21 +1,5 @@
-# Landing UI components
+# ClientPulse UI
 
-The frontend already uses TypeScript and the `@/*` alias, rooted at `apps/web`. Shared UI components live in `apps/web/components/ui`; this conventional folder keeps registry imports consistent with shadcn tooling. App components remain in `apps/web/components`. Global styles are in `apps/web/app`, and React Bits component CSS stays beside each component.
+Retained React Bits LiquidEther cursor-responsive landing background, independently rotating Three.js globe, Framer Motion navigation highlight and SpecularButton primary launch control. Dashboard controls use a lightweight CSS specular sweep so every clickable control can have feedback without a WebGL context per button. Landing effects are excluded from authenticated screens.
 
-Tailwind is configured through `apps/web/postcss.config.mjs` and `apps/web/app/tailwind.css`. Utilities are enabled without replacing the existing application's CSS reset. `apps/web/components.json` supplies shadcn aliases, and `apps/web/lib/utils.ts` supplies `cn`.
-
-The provided navigation component lives in `components/ui/nav-header.tsx`. It retains the supplied moving pill effect while using actual landing section links, typed position state, keyboard focus support, reduced-motion support and the existing mobile menu. No context provider or image assets are required. Framer Motion was already installed. The illustrative standalone demo page was not added to the product.
-
-To add a shadcn component, run from `apps/web`:
-
-```sh
-npx shadcn@latest add button
-```
-
-For a new project without this setup, initialize with `npx shadcn@latest init`. Tailwind dependencies are `tailwindcss`, `@tailwindcss/postcss` and `postcss`; TypeScript dependencies are `typescript`, `@types/react` and `@types/node`.
-
-Setup references: [Tailwind Next.js installation](https://tailwindcss.com/docs/installation/framework-guides/nextjs), [shadcn manual installation](https://ui.shadcn.com/docs/installation/manual).
-
-React Bits SpecularButton uses the supplied JS-CSS source plus `ogl`. Landing actions and the mobile menu use it. It caps device pixel ratio and rendering frequency, pauses offscreen, and keeps usable plain buttons for reduced-motion or unavailable WebGL.
-
-Dashboard and workspace controls use a lightweight specular-style sweep in apps/web/app/workspace-polish.css. It covers enabled buttons and actionable links/cards, responds to hover and keyboard focus, and respects reduced-motion preferences. This avoids one WebGL renderer per dashboard control. Search fields use a single focus-within outline on their container.
+The enterprise dashboard supports light/dark mode, responsive mobile navigation, source dialogs, customer filters, actual upload progress, explicit failed states, editable drafts and visible processing status. Reduced-motion preferences suppress animations. Original effect files remain under components/LiquidEther, components/SpecularButton, neural-core and components/ui/nav-header. No demo-result cards are used in the application; marketing diagrams are explicitly illustrative.

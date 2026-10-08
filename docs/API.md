@@ -1,6 +1,6 @@
 # API reference
 
-Open `/docs` on the backend for generated OpenAPI schemas. All data endpoints require a verified Supabase bearer token, except explicitly enabled local demo mode. Unauthorized or cross-owner IDs return 404. Health reveals service capability booleans, not secrets.
+Open `/docs` on the backend for generated OpenAPI schemas. All data endpoints require a verified Supabase bearer token. Unauthorized or cross-owner IDs return 404. Health reveals service capability booleans, not secrets.
 
 | Method | Path | Behavior |
 |---|---|---|
@@ -19,6 +19,6 @@ Open `/docs` on the backend for generated OpenAPI schemas. All data endpoints re
 | GET/POST | `/api/workspaces/{id}/reports` | List / create PDF report |
 | GET | `/api/reports/{id}/download` | Authorized PDF download |
 | POST | `/api/workspaces/{id}/study` | Gemini study guide, flashcards and quiz |
-| POST | `/api/demo` | Reuse or create two synthetic cases for current user |
 
 Upload is proxied through the authenticated API, not a two-stage signed upload flow. Formats are signature-verified where applicable. Processing is asynchronous in a separate worker. Failed AI requests do not persist fabricated assistant messages. Sources carry actual file IDs, segment IDs, pages/seconds/CSV rows when available.
+

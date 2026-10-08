@@ -18,7 +18,6 @@ Gemini generation, semantic embeddings, scanned-page OCR, image observation, aud
 - Chat responses are returned after validation, not streamed. Report creation and chat execute in backend worker threads. Reports are persisted; no asynchronous report-job queue.
 - Education study guides/quizzes are generated on request and held in the current page session. Scores/flashcards are not persisted as separate learning records.
 - Insurance and E-commerce specialize the same evidence workflow and prompts; dedicated repair estimate comparison and order/claim metadata panels are not implemented.
-- No built-in demo photo/audio/video. Exact staged-media requirements are in the asset checklist. Provided PDFs, CSV and statements are actual files processed by the real pipeline.
 - The library endpoint supports pagination, but workspace overview fetches all file metadata and up to 500 segments; very large workspaces need UI pagination and server aggregates.
 - API rate limits are process-local. Production requires a shared gateway limiter, malware scanning, encrypted disk/storage backups, monitoring and retention policy.
 - Prompt rules, typed output and source-ID validation reduce prompt injection risk; this is not a guarantee that a model cannot misinterpret malicious source text. Review outputs.

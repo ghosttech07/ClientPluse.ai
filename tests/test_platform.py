@@ -14,7 +14,7 @@ def upload(client,w,data=b'Machine A belt wear recorded. Grinding noise needs in
     assert r.status_code==201,r.text
     return r.json()[0]
 def test_auth_required(client,monkeypatch):
-    monkeypatch.setenv('DEMO_MODE','false')
+    app.dependency_overrides.clear()
     assert client.get('/api/workspaces').status_code==401
 def test_workspace_isolation(client,workspace):
     async def outsider():return 'another-user'
@@ -93,8 +93,5 @@ def test_invalid_ai_citation_rejected(client,workspace,monkeypatch):
     monkeypatch.setattr(intelligence,'available',lambda:True)
     monkeypatch.setattr(intelligence,'generate',lambda *args:Reasoning(summary='bad',observed_facts=[Claim(text='Claim',evidence_ids=['invented'])],possible_explanations=[],conflicting_information=[],missing_information=[],recommended_next_checks=[]))
     r=client.post('/api/workspaces/'+workspace['id']+'/ask',json={'question':'Machine A belt wear'});assert r.status_code==502
-def test_demo_actual_ingestion(client):
-    cases=client.post('/api/demo').json();assert len(cases)==2
-    while run_once():pass
-    for w in cases:
-        detail=client.get('/api/workspaces/'+w['id']).json();assert len(detail['files'])==3;assert all(f['status']=='Ready' for f in detail['files']);assert detail['segments']
+def test_removed_seed_endpoint(client):
+    assert client.post("/api/demo").status_code == 404

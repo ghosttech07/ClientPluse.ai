@@ -67,6 +67,5 @@ Click **Continue with Google**, select your own account, and complete the Google
 
 ## Production
 
-Add your production website origin to Google, and its exact `/auth/callback`, `/login`, and `/dashboard` URLs to Supabase. Change Supabase Site URL to the public HTTPS website. Disable shared `DEMO_MODE` before publishing.
 
 Official references: [Supabase Google sign-in](https://supabase.com/docs/guides/auth/social-login/auth-google), [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls).

@@ -19,7 +19,6 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://evidence:${POSTGRES_PASSWORD}@postgres:5432/evidence
       DATA_DIR: /app/data
-      DEMO_MODE: "false"
     ports: ["127.0.0.1:8000:8000"]
     volumes: ["evidence_data:/app/data"]
     depends_on:
@@ -33,7 +32,6 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://evidence:${POSTGRES_PASSWORD}@postgres:5432/evidence
       DATA_DIR: /app/data
-      DEMO_MODE: "false"
     volumes: ["evidence_data:/app/data"]
     depends_on:
       postgres: {condition: service_healthy}

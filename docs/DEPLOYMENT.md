@@ -8,7 +8,6 @@ Import the project into Vercel with root directory `apps/web`. Set `NEXT_PUBLIC_
 
 ## Backend and worker
 
-Use `services/api/Dockerfile` on a Python/Docker host. Start API with `uvicorn services.api.main:app --host 0.0.0.0 --port 8000`; run worker as a separate process using `python -m services.worker.main`. Mount the same persistent `/app/data` volume in both. Configure PostgreSQL using a restricted server role and `DATABASE_URL=postgresql+psycopg://...`. Set `DEMO_MODE=false`, Gemini key/model, Supabase URL/public key and allowed `WEB_ORIGINS`. Install FFmpeg (included in image). Provide secrets through host environment settings.
 
 Use one worker for this MVP. Lease expiry is 15 minutes; heartbeat extension/multi-worker concurrency and a Redis adapter are future work. Reports use private local volume storage. Use TLS and production monitoring.
 
@@ -18,4 +17,3 @@ Enable email/password Auth, configure redirects for signup and password recovery
 
 ## Acceptance before publication
 
-Run the production build, automated tests and actual Gemini smoke script. Sign up two real test accounts and verify cross-owner denial, reset password, upload every supported media type, inspect model provenance/citations, delete test data, download reports, check mobile screens and confirm DEMO_MODE is false. Production integrations cannot be declared verified merely because mocks pass.

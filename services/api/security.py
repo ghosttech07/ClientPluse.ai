@@ -5,7 +5,6 @@ import httpx
 from fastapi import Header, HTTPException, Request
 from services.api.db import Workspace
 
-DEMO_USER = 'local-demo'
 async def user(authorization: str | None = Header(None)):
     if authorization and authorization.startswith('Bearer '):
         url = os.getenv('SUPABASE_URL')
@@ -17,7 +16,6 @@ async def user(authorization: str | None = Header(None)):
         except httpx.HTTPError: raise HTTPException(503,'Authentication service is unavailable. Please retry shortly.')
         if r.status_code != 200: raise HTTPException(401, 'Your session expired. Please sign in again.')
         return r.json()['id']
-    if os.getenv('DEMO_MODE', 'false').lower() == 'true': return DEMO_USER
     raise HTTPException(401, 'Sign in to access this workspace.')
 def authorize(db, workspace_id, user_id):
     w = db.get(Workspace, workspace_id)

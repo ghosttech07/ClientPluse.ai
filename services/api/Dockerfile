@@ -5,7 +5,6 @@ COPY services/api/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY services /app/services
 COPY database /app/database
-COPY demo /app/demo
 RUN useradd --create-home evidence && mkdir -p /app/data && chown -R evidence:evidence /app
 USER evidence
 EXPOSE 8000

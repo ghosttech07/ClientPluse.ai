@@ -22,7 +22,7 @@ app=FastAPI(title='EVIDENCE.AI',version='1.0.0',lifespan=lifespan,dependencies=[
 app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000']+os.getenv('WEB_ORIGINS','').split(','),allow_credentials=True,allow_methods=['GET','POST','PATCH','DELETE'],allow_headers=['Authorization','Content-Type'])
 def database():
     with Session() as db: yield db
-def serialize(obj): return {c.name:getattr(obj,c.name) for c in obj.__table__.columns if c.name not in ('path','owner_id')}
+def serialize(obj): return {c.name:getattr(obj,c.name) for c in obj.__table__.columns if c.name not in ('path','owner_id','synthetic')}
 def log(db,u,w,action): db.add(Audit(user_id=u,workspace_id=w,action=action)); db.commit()
 class CreateWorkspace(BaseModel):
     name: str=Field(min_length=2,max_length=160)
@@ -30,7 +30,7 @@ class CreateWorkspace(BaseModel):
     industry: Literal['Manufacturing','Education','Insurance','E-commerce']
 class Question(BaseModel): question: str=Field(min_length=2,max_length=4000)
 @app.get('/api/health')
-def health(): return {'status':'ok','gemini':available(),'auth':bool(os.getenv('SUPABASE_URL')),'demo':os.getenv('DEMO_MODE','false')=='true','storage':'private local storage','retrieval':'hybrid semantic + keyword' if available() else 'keyword retrieval'}
+def health(): return {'status':'ok','gemini':available(),'auth':bool(os.getenv('SUPABASE_URL')),'storage':'private local storage','retrieval':'hybrid semantic + keyword' if available() else 'keyword retrieval'}
 @app.get('/api/workspaces')
 def workspaces(u=Depends(user),db=Depends(database)): return [serialize(w) for w in db.scalars(select(Workspace).where(Workspace.owner_id==u).order_by(Workspace.created_at.desc()))]
 @app.post('/api/workspaces',status_code=201)
@@ -126,10 +126,6 @@ def download(rid:str,u=Depends(user),db=Depends(database)):
     r=db.get(Report,rid)
     if not r: raise HTTPException(404,'Report not found.')
     authorize(db,r.workspace_id,u); return FileResponse(r.path,media_type='application/pdf',filename='EvidenceAI-report.pdf')
-@app.post('/api/demo')
-def demo(u=Depends(user),db=Depends(database)):
-    from demo.seed import create_demo
-    return create_demo(db,u)
 @app.post('/api/workspaces/{wid}/study')
 def study(wid:str,u=Depends(user),db=Depends(database)):
     from services.api.study import make_study
@@ -137,3 +133,4 @@ def study(wid:str,u=Depends(user),db=Depends(database)):
     try: return make_study(db,wid)
     except ValueError as e: raise HTTPException(400,str(e))
     except Exception: raise HTTPException(502,'Study generation failed. Check Gemini configuration and retry.')
+

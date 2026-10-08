@@ -17,7 +17,6 @@ def make_report(db,w):
     def p(text,style='BodyText'): story.append(Paragraph(escape(str(text)).replace('\n','<br/>'),styles[style])); story.append(Spacer(1,9))
     p('EVIDENCE.AI','Title'); p('Investigation evidence report','Heading1'); p(w.name,'Heading2')
     p(f'Industry: {w.industry} | Workspace: {w.id} | Generated: {now()}')
-    if w.synthetic: p('SYNTHETIC DEMONSTRATION DATA — not a real incident')
     p('1. Case information','Heading2'); p(w.description or 'No case description supplied.')
     p('2. Executive summary','Heading2')
     messages=list(db.scalars(select(Message).where(Message.workspace_id==w.id,Message.role=='assistant').order_by(Message.created_at)))
@@ -50,3 +49,4 @@ def make_report(db,w):
         canvas.setFillColor(colors.HexColor('#64748b')); canvas.setFont('Helvetica',8); canvas.drawString(36,22,'EVIDENCE.AI • Traceable intelligence'); canvas.drawRightString(A4[0]-36,22,f'Page {doc.page}')
     SimpleDocTemplate(str(path),pagesize=A4,rightMargin=40,leftMargin=40,topMargin=45,bottomMargin=40).build(story,onFirstPage=footer,onLaterPages=footer)
     db.commit(); return report
+

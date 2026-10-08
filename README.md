@@ -18,7 +18,6 @@ A responsive Next.js website with a FastAPI backend for persistent, source-linke
 - PDF reports using stored evidence and saved findings.
 - Source-grounded flashcards, quizzes with score and retry, and study guides (Gemini required).
 - Supabase signup, login, logout, password recovery/update, profile settings and account session handling when configured.
-- Two synthetic cases consisting of **actual files**, processed through the same worker as user uploads. No hardcoded investigation answers.
 
 ## Architecture and stack
 
@@ -53,7 +52,6 @@ The `.env` and `apps/web/.env.local` files have been created with blank key fiel
 | `EMBEDDING_MODEL` | root `.env` | Default `gemini-embedding-001`; 768 dimensions |
 | `SUPABASE_URL` | root `.env` | Your Supabase project URL |
 | `SUPABASE_ANON_KEY` | root `.env` | Publishable/anon key used to verify Auth users |
-| `DEMO_MODE` | root `.env` | `true` only for shared local demo; set `false` for authenticated/public use |
 | `DATABASE_URL` | root `.env` | Default SQLite; production `postgresql+psycopg://...` |
 | `DATA_DIR` | root `.env` | Private persistent uploads/reports; shared by API and worker |
 | `STORAGE_PROVIDER` | root `.env` | `local` or `supabase` |
@@ -91,11 +89,9 @@ The worker must run; uploading alone queues a file. Files remain Queued until th
 
 SQLite tables are created on startup. PostgreSQL can use the same SQLAlchemy schema. For explicit versioned schema setup run `python -m database.migrate` using the project virtual environment. It records applied SQLAlchemy schema versions. See `database/migrations/001_initial.sql` for the equivalent PostgreSQL DDL and `002_supabase_policies.sql` for optional Supabase RLS/storage hardening. Restrict the backend database connection to a server role; do not allow clients to write through PostgREST.
 
-## Demo datasets and real uploads
+## Real uploads
 
-`python -m demo.generate` creates the PDFs, CSVs and statements in `demo/datasets`. Dashboard → Explore demo cases enqueues those real files. Wait for Ready, ask a question, click citations, inspect Timeline/Graph, and generate a PDF report. To recreate a case, delete the synthetic workspace in Settings then run Explore demo cases again.
-
-The prepared demo has no manufactured image or media claims. See `demo/ASSET_CHECKLIST.md` to supply staged video, images and narrated audio. A freshly created workspace starts empty and every answer depends on the files actually uploaded there.
+Sign in, create a workspace, and upload your own evidence. Extraction, answers, and reports use those uploaded sources.
 
 ## Checks
 
@@ -117,6 +113,6 @@ External providers are mocked in automated tests. The real smoke script fails wi
 
 Google sign-in is available through Supabase OAuth. Enable the Google provider and configure the client credentials and redirect addresses described in [Google sign-in setup](docs/GOOGLE_SIGN_IN.md). Google OAuth secrets belong in Supabase's provider settings, never in browser environment variables.
 
-Frontend: Vercel, root directory `apps/web`, build `npm run build`; configure the public Supabase settings and `API_URL` pointing to an HTTPS Python backend. Set public settings before building. Backend: Docker/Python host with a persistent volume at `/app/data`, PostgreSQL, and the same env settings for API and worker. Set `DEMO_MODE=false`, restrict origins, provide secrets privately and use HTTPS. Docker Compose provides a local PostgreSQL + API + worker deployment. Never publish shared local demo mode.
+Frontend: Vercel, root directory `apps/web`, build `npm run build`; configure the public Supabase settings and `API_URL` pointing to an HTTPS Python backend. Set public settings before building. Backend: Docker/Python host with a persistent volume at `/app/data`, PostgreSQL, and the same env settings for API and worker. Require authenticated access, restrict origins, provide secrets privately and use HTTPS. Docker Compose provides a local PostgreSQL + API + worker deployment.
 
-No cloud deployment is performed or claimed in this build. PostgreSQL, Supabase Auth/storage and live Gemini require service setup and live verification. See [deployment](docs/DEPLOYMENT.md), [security](docs/SECURITY.md), [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), and [demo guide](docs/DEMO_GUIDE.md).
+No cloud deployment is performed or claimed in this build. PostgreSQL, Supabase Auth/storage and live Gemini require service setup and live verification. See [deployment](docs/DEPLOYMENT.md), [security](docs/SECURITY.md), [architecture](docs/ARCHITECTURE.md), [API](docs/API.md).

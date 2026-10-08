@@ -43,4 +43,4 @@ Cloud deployment, production PostgreSQL and Supabase Storage mirror are prepared
 
 The final start.ps1 launch brought the frontend, API and worker online; the live education check ran successfully against those managed processes. An earlier study request returned a provider error, so provider availability and quota can still affect generation.
 
-Test fixtures are synthetic. The video is a static test-label scene, not warehouse footage; the audio is computer-narrated. They validate actual media ingestion and do not establish real incident findings. Current local setup uses shared DEMO_MODE; authenticated private mode must disable it before public use.
+Seeded cases and temporary live-upload fixtures have been removed from the local database; the user-owned NIAT workspace was preserved. Anonymous access is rejected by the backend.

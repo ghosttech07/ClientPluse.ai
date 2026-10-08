@@ -3,7 +3,7 @@ import {DotsRing} from './ui/dots-ring';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {ArrowRight,Eye,EyeOff,ShieldCheck,Mail,Lock} from 'lucide-react';
+import {ArrowRight,Eye,EyeOff,Mail,Lock} from 'lucide-react';
 import {supabase} from '@/lib/api';
 import {SignInCard} from './ui/sign-in-card-2';
 export default function PulseLogin(){
@@ -23,6 +23,6 @@ export default function PulseLogin(){
  </form>
  {(mode==='login'||mode==='signup')&&<><div className="cp-auth-divider">or</div><button className="cp-signin-google" disabled={busy} onClick={()=>void google()}><span aria-hidden="true">G</span>Continue with Google</button></>}
  <div className="cp-auth-toggle">{mode==='login'?'New to ClientPulse?':'Already have an account?'} <button disabled={busy} onClick={()=>{setMode(mode==='login'?'signup':'login');setError('');setNotice('');}}>{mode==='login'?'Create an account':'Sign in'}</button></div>
- <div className="cp-auth-footer"><ShieldCheck size={14} style={{display:'inline',verticalAlign:'middle',marginRight:6}}/>Private communications. Source-backed decisions.<p><Link href="/">Back to website</Link></p></div>
+ <div className="cp-auth-footer"><p><Link href="/">Back to website</Link></p></div>
  </SignInCard></main>;
 }

@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
 
-const cards='.cp-panel,.cp-stat,.cp-auth-card,.cp-form-modal';
+const cards='.cp-panel,.cp-stat,.cp-auth-card,.cp-form-modal,.cp-empty:not(.cp-panel .cp-empty)';
 export function WorkspaceGlow({children}:{children:ReactNode}){
  const root=useRef<HTMLDivElement>(null);const [theme,setTheme]=useState('light');
  useEffect(()=>{const sync=()=>setTheme(localStorage.getItem('cp-theme')==='dark'?'dark':'light');sync();window.addEventListener('cp-theme-change',sync);window.addEventListener('storage',sync);return()=>{window.removeEventListener('cp-theme-change',sync);window.removeEventListener('storage',sync);};},[]);

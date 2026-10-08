@@ -47,7 +47,7 @@
 .pulse .cp-sidebar nav a>svg,.pulse .cp-sidebar-action>svg{width:24px;height:24px;flex-shrink:0}
 .pulse .cp-sidebar nav a:before,.pulse .cp-sidebar-action:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#b794f4,#7040df);opacity:0;transition:opacity .2s linear;pointer-events:none}
 .pulse .cp-sidebar nav a:hover,.pulse .cp-sidebar-action:hover{background:var(--cp-soft);box-shadow:inset 0 2px 8px #8b5cf620;color:var(--cp-text)}
-.pulse .cp-sidebar nav a.cp-active{background:var(--cp-soft);color:var(--cp-accent)}
+.pulse .cp-sidebar nav a.cp-active{background:transparent;color:var(--cp-accent);box-shadow:none}
 .pulse .cp-sidebar nav a:focus,.pulse .cp-sidebar-action:focus{color:#fff;outline:none;box-shadow:inset 0 2px 8px #5b21b620}
 .pulse .cp-sidebar nav a:focus:before,.pulse .cp-sidebar-action:focus:before{opacity:1}
 .pulse .cp-sidebar nav a:focus-visible,.pulse .cp-sidebar-action:focus-visible{outline:2px solid #9b7de8;outline-offset:2px}

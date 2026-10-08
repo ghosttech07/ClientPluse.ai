@@ -5,6 +5,7 @@ from services.api.db import engine,Base
 from services.api import pulse_models
 def migrate():
     with engine.begin() as conn:
+        if engine.dialect.name=='postgresql':conn.execute(text('SELECT pg_advisory_xact_lock(734821045)'))
         conn.execute(text('CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY, applied_at VARCHAR(40) NOT NULL)'))
         if engine.dialect.name=='postgresql':conn.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
         if not conn.scalar(text('SELECT version FROM schema_versions WHERE version=1')):

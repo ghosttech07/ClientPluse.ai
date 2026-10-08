@@ -17,5 +17,15 @@ def migrate():
                 for statement in source.read_text().split(';'):
                     if statement.strip():conn.execute(text(statement))
             conn.execute(text("INSERT INTO schema_versions(version,applied_at) VALUES (3,CURRENT_TIMESTAMP)"))
-    print('ClientPulse schema version 3 is ready.')
+        if not conn.scalar(text('SELECT version FROM schema_versions WHERE version=5')):
+            pulse_models.ChatAttachment.__table__.create(conn,checkfirst=True)
+            if engine.dialect.name=='postgresql':conn.execute(text('ALTER TABLE cp_chat_attachments ENABLE ROW LEVEL SECURITY'))
+            conn.execute(text("INSERT INTO schema_versions(version,applied_at) VALUES (5,CURRENT_TIMESTAMP)"))
+        if not conn.scalar(text('SELECT version FROM schema_versions WHERE version=6')):
+            pulse_models.ChatThread.__table__.create(conn,checkfirst=True)
+            from sqlalchemy import inspect
+            if 'thread_id' not in {c['name'] for c in inspect(conn).get_columns('cp_messages')}:conn.execute(text('ALTER TABLE cp_messages ADD COLUMN thread_id VARCHAR(36)'))
+            if engine.dialect.name=='postgresql':conn.execute(text('ALTER TABLE cp_chat_threads ENABLE ROW LEVEL SECURITY'))
+            conn.execute(text("INSERT INTO schema_versions(version,applied_at) VALUES (6,CURRENT_TIMESTAMP)"))
+    print('ClientPulse schema version 6 is ready.')
 if __name__=='__main__':migrate()

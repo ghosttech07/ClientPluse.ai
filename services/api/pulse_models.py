@@ -146,6 +146,7 @@ class Draft(TenantRecord, Base):
 
 class Conversation(TenantRecord, Base):
     __tablename__ = 'cp_messages'
+    thread_id: Mapped[str | None] = mapped_column(String(36),nullable=True,index=True)
     customer_id: Mapped[str | None] = mapped_column(ForeignKey('cp_customers.id', ondelete='CASCADE'), nullable=True, index=True)
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
@@ -157,3 +158,19 @@ class PulseAudit(TenantRecord, Base):
     user_id: Mapped[str] = mapped_column(String(64))
     action: Mapped[str] = mapped_column(String(80))
     record_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+
+class ChatAttachment(TenantRecord, Base):
+    __tablename__ = 'cp_chat_attachments'
+    customer_id: Mapped[str | None] = mapped_column(ForeignKey('cp_customers.id', ondelete='CASCADE'), nullable=True)
+    name: Mapped[str] = mapped_column(String(255))
+    mime: Mapped[str] = mapped_column(String(100))
+    path: Mapped[str] = mapped_column(Text)
+    storage_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ChatThread(TenantRecord, Base):
+    __tablename__ = 'cp_chat_threads'
+    title: Mapped[str] = mapped_column(String(160),default='New chat')
+    share_token: Mapped[str | None] = mapped_column(String(64),nullable=True,unique=True)
+    snapshot: Mapped[list] = mapped_column(JSON,default=list)

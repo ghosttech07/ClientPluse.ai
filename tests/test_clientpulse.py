@@ -258,3 +258,170 @@ def test_company_setup_required_before_workspace_access(client):
     assert client.post('/api/v1/onboarding',json={'name':'  Acme Ltd  '}).json()['name']=='Acme Ltd'
     assert client.get('/api/v1/customers').status_code==200
     assert client.get('/api/v1/settings').json()['onboarding_required'] is False
+
+
+def test_chat_memory_corrections_and_unique_files(client,customer,monkeypatch):
+    from services.api import pulse
+    monkeypatch.setattr(pulse,'available',lambda:True)
+    refs=[{'id':'segment-1','file_id':'file-a','content':'Delayed','file_name':'call.mp3'},
+          {'id':'segment-2','file_id':'file-a','content':'Still delayed','file_name':'call.mp3'},
+          {'id':'segment-3','file_id':'file-b','content':'Email','file_name':'mail.eml'}]
+    monkeypatch.setattr(pulse,'query_evidence',lambda *args:refs)
+    prompts=[]
+    def answer(prompt,schema):
+        prompts.append(prompt)
+        return pulse.Answer(claims=[{'text':'Delayed','evidence_ids':['segment-1','segment-2','segment-3']}],limitations=[])
+    monkeypatch.setattr(pulse,'generate',answer)
+    first=client.post('/api/v1/intelligence/query',json={'customer_id':customer['id'],'question':'What is delayed?'}).json()
+    assert len(first['citations'])==2
+    assert '[1, 2]' in first['content']
+    correction=client.post('/api/v1/intelligence/messages/'+first['id']+'/correction',json={'correction':'Remember the order reference is TEST-42.'})
+    assert correction.status_code==200
+    second=client.post('/api/v1/intelligence/query',json={'customer_id':customer['id'],'question':'What did I ask earlier?'})
+    assert second.status_code==200
+    assert 'What is delayed?' in prompts[-1] and 'TEST-42' in prompts[-1]
+    visible=client.get('/api/v1/intelligence/messages',params={'customer_id':customer['id']}).json()
+    assert all(x['role']!='correction' for x in visible)
+    client.post('/api/v1/intelligence/query',json={'question':'Organization-wide question'})
+    assert 'TEST-42' not in prompts[-1] and 'What is delayed?' not in prompts[-1]
+
+
+def test_failed_ai_answer_keeps_question(client,customer,monkeypatch):
+    from services.api import pulse
+    monkeypatch.setattr(pulse,'available',lambda:True)
+    monkeypatch.setattr(pulse,'query_evidence',lambda *args:[{'id':'source','content':'Example'}])
+    def fail(*args):raise ValueError('Synthetic provider failure')
+    monkeypatch.setattr(pulse,'generate',fail)
+    response=client.post('/api/v1/intelligence/query',json={'customer_id':customer['id'],'question':'Does the problem remain unresolved?'})
+    assert response.status_code==502
+    messages=client.get('/api/v1/intelligence/messages',params={'customer_id':customer['id']}).json()
+    assert len(messages)==1 and messages[0]['role']=='user'
+    assert messages[0]['content']=='Does the problem remain unresolved?'
+
+
+def test_chat_schema_constrains_citation_ids(client,customer,monkeypatch):
+    from services.api import pulse
+    monkeypatch.setattr(pulse,'available',lambda:True)
+    monkeypatch.setattr(pulse,'query_evidence',lambda *args:[{'id':'allowed-id','file_id':'file-1','file_name':'ticket.txt','content':'Issue open'}])
+    def answer(prompt,schema):
+        import pytest
+        with pytest.raises(ValueError):schema.model_validate({'claims':[{'text':'Invalid','evidence_ids':['stale-id']}],'limitations':[]})
+        return schema.model_validate({'claims':[{'text':'Issue open','evidence_ids':['allowed-id']}],'limitations':[]})
+    monkeypatch.setattr(pulse,'generate',answer)
+    result=client.post('/api/v1/intelligence/query',json={'customer_id':customer['id'],'question':'Is the issue resolved?'})
+    assert result.status_code==200
+
+
+@pytest.fixture(autouse=True)
+def mock_question_router(monkeypatch):
+    from services.api import pulse
+    monkeypatch.setattr(pulse,'classify_question',lambda *args:'customer')
+
+
+def test_general_question_without_customer_evidence(client,monkeypatch):
+    from services.api import pulse
+    monkeypatch.setattr(pulse,'available',lambda:True)
+    monkeypatch.setattr(pulse,'classify_question',lambda *args:'general')
+    monkeypatch.setattr(pulse,'general_answer',lambda question,history:'Which city should I check?')
+    def no_retrieval(*args):raise AssertionError('General questions must not retrieve customer files')
+    monkeypatch.setattr(pulse,'query_evidence',no_retrieval)
+    r=client.post('/api/v1/intelligence/query',json={'question':'What is the current temperature?'})
+    assert r.status_code==200 and r.json()['citations']==[]
+    assert 'Which city' in r.json()['content']
+
+
+def test_chat_attachment_upload_followup_and_scope(client,customer,monkeypatch):
+    from services.api import pulse
+    image=io.BytesIO();Image.new('RGB',(4,4),'red').save(image,format='PNG')
+    uploaded=client.post('/api/v1/intelligence/attachments',data={'customer_id':customer['id']},files={'files':('example.png',image.getvalue(),'image/png')})
+    assert uploaded.status_code==200
+    aid=uploaded.json()[0]['id']
+    captured=[]
+    def answer(question,history,files):
+        captured.append(files)
+        return 'The attached image is red.'
+    monkeypatch.setattr(pulse,'answer_attachments',answer)
+    r=client.post('/api/v1/intelligence/query',json={'customer_id':customer['id'],'question':'Describe this image','attachment_ids':[aid]})
+    assert r.status_code==200 and r.json()['citations'][0]['modality']=='chat_attachment'
+    r=client.post('/api/v1/intelligence/query',json={'customer_id':customer['id'],'question':'What color was it?'})
+    assert r.status_code==200 and len(captured)==2
+    assert captured[0][0][1]=='image/png'
+    assert client.get('/api/v1/uploads').json()==[]
+    assert client.get('/api/v1/intelligence/attachments/'+aid+'/content').status_code==200
+    assert client.post('/api/v1/intelligence/query',json={'question':'Read this','attachment_ids':[aid]}).status_code==400
+    other=client.post('/api/v1/customers',json={'name':'Another customer'}).json()
+    assert client.post('/api/v1/intelligence/query',json={'customer_id':other['id'],'question':'Read this','attachment_ids':[aid]}).status_code==400
+    async def outsider():return 'different-owner'
+    app.dependency_overrides[user]=outsider
+    assert client.get('/api/v1/intelligence/attachments/'+aid+'/content').status_code in (403,404)
+
+
+def test_chat_attachments_reject_wrong_format(client):
+    r=client.post('/api/v1/intelligence/attachments',files={'files':('notes.txt',b'hello','text/plain')})
+    assert r.status_code==400
+
+
+def test_new_chat_isolation_share_and_delete(client,monkeypatch):
+    first=client.post('/api/v1/intelligence/chats').json()['id']
+    second=client.post('/api/v1/intelligence/chats').json()['id']
+    client.post('/api/v1/intelligence/query',json={'question':'Who are you?','thread_id':first})
+    assert len(client.get('/api/v1/intelligence/messages',params={'thread_id':first}).json())==2
+    assert client.get('/api/v1/intelligence/messages',params={'thread_id':second}).json()==[]
+    token=client.post('/api/v1/intelligence/chats/'+first+'/share').json()['token']
+    shared=client.get('/api/shared-chat/'+token)
+    assert shared.status_code==200 and len(shared.json()['messages'])==2
+    async def outsider():return 'other-chat-owner'
+    app.dependency_overrides[user]=outsider
+    assert client.delete('/api/v1/intelligence/chats/'+first).status_code in (403,404)
+    async def owner():return 'test-owner'
+    app.dependency_overrides[user]=owner
+    assert client.delete('/api/v1/intelligence/chats/'+first).status_code==200
+    assert client.get('/api/shared-chat/'+token).status_code==404
+    assert client.get('/api/v1/intelligence/messages',params={'thread_id':second}).json()==[]
+
+
+def test_rename_validation_and_attachment_chat_cleanup(client,monkeypatch):
+    from services.api import pulse
+    tid=client.post('/api/v1/intelligence/chats').json()['id']
+    r=client.patch('/api/v1/intelligence/chats/'+tid,json={'title':'  Saved name  '})
+    assert r.status_code==200 and r.json()['title']=='Saved name'
+    assert client.patch('/api/v1/intelligence/chats/'+tid,json={'title':'  '}).status_code==422
+    image=io.BytesIO();Image.new('RGB',(4,4),'blue').save(image,format='PNG')
+    aid=client.post('/api/v1/intelligence/attachments',files={'files':('blue.png',image.getvalue(),'image/png')}).json()[0]['id']
+    monkeypatch.setattr(pulse,'answer_attachments',lambda *args:'Blue image')
+    assert client.post('/api/v1/intelligence/query',json={'thread_id':tid,'question':'Describe it','attachment_ids':[aid]}).status_code==200
+    assert client.delete('/api/v1/intelligence/chats/'+tid).status_code==200
+    assert client.get('/api/v1/intelligence/attachments/'+aid+'/content').status_code==404
+
+
+def test_retention_removes_chat_files_and_revokes_shares(client,monkeypatch):
+    from services.api import pulse
+    tid=client.post('/api/v1/intelligence/chats').json()['id']
+    image=io.BytesIO();Image.new('RGB',(4,4),'blue').save(image,format='PNG')
+    aid=client.post('/api/v1/intelligence/attachments',files={'files':('expired.png',image.getvalue(),'image/png')}).json()[0]['id']
+    monkeypatch.setattr(pulse,'answer_attachments',lambda *args:'Blue')
+    client.post('/api/v1/intelligence/query',json={'thread_id':tid,'question':'Describe image','attachment_ids':[aid]})
+    token=client.post('/api/v1/intelligence/chats/'+tid+'/share').json()['token']
+    with Session() as db:
+        attachment=db.get(m.ChatAttachment,aid);attachment.created_at='2000-01-01T00:00:00+00:00';db.commit()
+    assert client.post('/api/v1/retention/purge').status_code==200
+    assert client.get('/api/v1/intelligence/attachments/'+aid+'/content').status_code==404
+    assert client.get('/api/shared-chat/'+token).status_code==404
+
+
+def test_delete_resolved_case_preserves_evidence(client,customer,monkeypatch):
+    monkeypatch.setattr(worker,'available',lambda:False)
+    monkeypatch.setattr(worker,'analyse',lambda evidence:finding(evidence))
+    ticket(client,customer);worker.run_once()
+    case=client.get('/api/v1/complaints').json()[0]
+    assert client.delete('/api/v1/complaints/'+case['id']).status_code==409
+    client.patch('/api/v1/complaints/'+case['id'],json={'status':'Resolved','note':'Verified resolved'})
+    async def outsider():return 'case-outsider'
+    app.dependency_overrides[user]=outsider
+    assert client.delete('/api/v1/complaints/'+case['id']).status_code in (403,404)
+    async def owner():return 'test-owner'
+    app.dependency_overrides[user]=owner
+    assert client.delete('/api/v1/complaints/'+case['id']).status_code==200
+    assert client.get('/api/v1/complaints').json()==[]
+    assert len(client.get('/api/v1/uploads').json())==1
+    assert client.get('/api/v1/customers/'+customer['id']+'/timeline').json()

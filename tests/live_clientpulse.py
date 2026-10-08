@@ -15,6 +15,13 @@ def main():
     auth_path=Path('data/clientpulse-qa-auth.json');done=Path('data/clientpulse-qa-done')
     with httpx.Client(timeout=170,follow_redirects=True) as client:
         try:
+            ready=time.monotonic()+60
+            while time.monotonic()<ready:
+                try:
+                    if client.get(api+'/api/health').status_code==200:break
+                except httpx.RequestError:pass
+                time.sleep(1)
+            else:raise AssertionError('API did not become ready before live verification.')
             for index in range(2):
                 email=f'clientpulse-qa-{uuid4().hex}@example.com';password=secrets.token_urlsafe(24)
                 result=client.post(url+'/auth/v1/admin/users',headers=admin,json={'email':email,'password':password,'email_confirm':True});result.raise_for_status();owner_ids.append(result.json()['id'])

@@ -25,6 +25,8 @@ For separate terminals: `python -m uvicorn services.api.main:app --port 8000`, `
 
 SQLite can be used for isolated development and tests with DATABASE_URL=sqlite:///./data/evidence.db and STORAGE_PROVIDER=local. This does not satisfy or verify the requested production Supabase PostgreSQL/pgvector configuration.
 
+The current application is connected to Supabase PostgreSQL with TLS, private Storage and pgvector. There is no implicit SQLite fallback. To migrate another existing local database, stop API and worker, configure the Supabase DATABASE_URL, then run `python -m scripts.migrate_to_supabase --source data/evidence.db`. The tool saves a SQLite backup, refuses conflicting cloud records and verifies all copied rows before committing. Restart both services afterwards. Credentials and backups stay out of Git.
+
 ## Use the product
 
 Sign in with Supabase Auth. Create a customer with an exact email/account identifier. Upload communications, optionally supplying their actual communication date. Unknown identities go to human review. Wait for Ready, then inspect the customer’s linked cases, risk factors and timeline. Ask the assistant a customer-scoped question and click source citations. Generate a follow-up or report, edit it, and approve it for your own use. Nothing is sent automatically.

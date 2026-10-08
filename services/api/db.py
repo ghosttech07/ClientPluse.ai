@@ -9,7 +9,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 load_dotenv()
 DATA = Path(os.getenv('DATA_DIR', './data')).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
-URL = os.getenv('DATABASE_URL', f'sqlite:///{DATA / "evidence.db"}')
+URL = os.getenv('DATABASE_URL')
+if not URL:raise ValueError('DATABASE_URL is required. Configure the backend PostgreSQL connection; no local database fallback is used.')
 engine = create_engine(URL, connect_args={'check_same_thread': False,'timeout':30} if URL.startswith('sqlite') else {}, pool_pre_ping=True)
 if URL.startswith('sqlite'):
     @event.listens_for(engine,'connect')

@@ -14,6 +14,8 @@ Verified locally on 8 October 2026. This records actual checks, not a public dep
 
 ## Not yet verified
 
-The existing local DATABASE_URL is still SQLite. Supabase PostgreSQL migrations, RLS and pgvector code require the production connection and a separate live database check. Deepgram is an optional adapter with mocked checks; Sarvam is the live-tested transcription provider. Completed Google OAuth consent, public hosting, long multi-speaker Hindi recordings, concurrent load and tenant scale have not been tested in this run.
+The full disposable live workflow was rerun successfully on Supabase PostgreSQL: real Sarvam WAV transcription, email and screenshot processing, a single correlated case, 95/Critical risk, cancellation alert, customer-scoped cited Gemini answer, draft and PDF. The answer took 6.3 seconds in that run. Cross-account original-file/customer access was denied, and temporary QA accounts and data were cleaned up. The isolated regression suite also passed all 18 tests after removing implicit local fallback.
+
+Supabase PostgreSQL is now the active application database. Migration preserved one legacy workspace, 23 audit entries, one ClientPulse organization and one member; all source rows were compared with copied rows. TLS, vector extension, HNSW index and RLS on all 15 ClientPulse tables were verified. Deepgram is an optional adapter with mocked checks; Sarvam is the live-tested transcription provider. Completed Google OAuth consent, public hosting, long multi-speaker Hindi recordings, concurrent load and tenant scale have not been tested in this run.
 
 Screenshots in this directory are real local UI captures. Dashboard/profile captures used explicitly labelled temporary synthetic QA records; the landing graphic is an illustrative workflow rather than customer data.

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from services.api.db import init_db, uid
+from services.api.db import init_db, uid, engine
 from services.api.security import rate_limit
 from services.api.pulse import router
 from services.worker.ai import available
@@ -30,6 +30,6 @@ async def request_timing(request,call_next):
     return response
 
 @app.get('/api/health')
-def health():return {'status':'ok','product':'ClientPulse AI','gemini':available(),'auth':bool(os.getenv('SUPABASE_URL'))}
+def health():return {'status':'ok','product':'ClientPulse AI','database':engine.dialect.name,'gemini':available(),'auth':bool(os.getenv('SUPABASE_URL'))}
 
 app.include_router(router)

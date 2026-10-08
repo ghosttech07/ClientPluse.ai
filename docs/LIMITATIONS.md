@@ -2,7 +2,7 @@
 
 ClientPulse uses real customer uploads and provider responses. Dashboard data is never automatically seeded. The labelled synthetic fixtures are opt-in inputs, processed through the same pipeline.
 
-- The current local DATABASE_URL still points to SQLite. Supabase Auth and private Storage are live. PostgreSQL schema, RLS policies and pgvector queries are implemented but require a Supabase PostgreSQL connection before live verification.
+- The application now uses Supabase PostgreSQL through its TLS session pooler. Existing SQLite records were backed up, copied and verified. The vector extension, HNSW index and tenant RLS policies are present. SQLite remains only an explicit isolated test/development option and an offline migration backup.
 - Sarvam Saaras v4 batch transcription is integrated and has passed a live synthetic audio check. Deepgram Nova-3 remains a selectable alternative; its adapter is tested with mocked provider responses, but no live Deepgram key is configured.
 - Gemini handles screenshot transcription, scanned PDF OCR, complaint reasoning, cited answers, drafts and embeddings. Output remains uncertain and must be reviewed against source evidence. Similar customer names never establish identity.
 - Risk is a configurable heuristic, not a calibrated churn prediction model. Promises and conditional cancellation threats are distinguished from completed resolutions and cancellations.

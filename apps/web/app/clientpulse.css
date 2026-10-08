@@ -13,3 +13,18 @@
 .cp-effects{overflow-x:clip}.cp-effects .cp-signal:nth-of-type(4){bottom:20px}@media(max-width:700px){.cp-effects .cp-signal{width:155px}.cp-effects .cp-signal:nth-of-type(4){bottom:18px}.cp-effects .cp-signal:nth-of-type(5){bottom:0}.cp-effects .cp-visual-output{top:42%}}
 .pulse .cp-auth-password>input{width:100%;padding-right:54px}
 .pulse .cp-auth-password>.cp-icon{position:absolute;right:8px;top:50%;transform:translateY(-50%);margin:0}
+
+/* Flow layout keeps the globe's information cards separate at every width. */
+.cp-effects .cp-hero>div{min-width:0}
+.cp-effects .cp-hero-visual{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto minmax(210px,1fr) auto;gap:20px;align-items:center;min-width:0;min-height:550px}
+.cp-effects .cp-hero-visual>.cp-visual-header{grid-column:1/-1;width:100%;top:auto;min-width:0}
+.cp-effects .cp-hero-visual>.cp-signal{position:relative;inset:auto;width:100%;min-width:0;margin:0;padding:18px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;align-self:center}
+.cp-effects .cp-hero-visual>.cp-signal>div{min-width:0;width:100%}
+.cp-effects .cp-hero-visual>.cp-signal strong,.cp-effects .cp-hero-visual>.cp-signal small{overflow-wrap:anywhere}
+.cp-effects .cp-hero-visual>.cp-signal>svg{position:absolute;top:18px;right:14px}
+.cp-effects .cp-hero-visual>.cp-visual-output{position:relative;inset:auto;grid-column:1/-1;margin:0;min-width:0;width:100%;padding:22px}
+.cp-effects .cp-hero-visual>.cp-globe{inset:0;overflow:hidden}
+.cp-effects .cp-visual-header>div{min-width:0}
+.cp-effects .cp-visual-header h3,.cp-effects .cp-visual-header small{overflow-wrap:anywhere}
+@media(max-width:1100px){.cp-effects .cp-hero{grid-template-columns:1fr}.cp-effects .cp-hero-visual{width:100%;max-width:780px;justify-self:center}.cp-effects .cp-hero h1{font-size:clamp(38px,6vw,64px)}}
+@media(max-width:520px){.cp-effects .cp-hero-visual{grid-template-columns:1fr;grid-template-rows:none;min-height:0;gap:16px}.cp-effects .cp-hero-visual>.cp-signal{flex-direction:row;align-items:center;padding:18px;gap:14px}.cp-effects .cp-hero-visual>.cp-signal>div{padding-right:20px}.cp-effects .cp-hero-visual>.cp-signal>svg{top:50%;transform:translateY(-50%)}.cp-effects .cp-hero-visual>.cp-visual-output{padding:20px 16px}.cp-effects .cp-hero h1{font-size:clamp(32px,10vw,46px)}.cp-effects .cp-visual-header{padding:14px;gap:12px}.cp-effects .cp-hero-cta{white-space:normal;max-width:100%}}

@@ -11,7 +11,12 @@ DATA = Path(os.getenv('DATA_DIR', './data')).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
 URL = os.getenv('DATABASE_URL')
 if not URL:raise ValueError('DATABASE_URL is required. Configure the backend PostgreSQL connection; no local database fallback is used.')
-engine = create_engine(URL, connect_args={'check_same_thread': False,'timeout':30} if URL.startswith('sqlite') else {}, pool_pre_ping=True)
+# Keep session-pooler usage bounded across API, workers, and rolling deploys.
+engine_options = {} if URL.startswith('sqlite') else {
+    'pool_size': 2, 'max_overflow': 0, 'pool_timeout': 15,
+    'pool_recycle': 300, 'pool_use_lifo': True,
+}
+engine = create_engine(URL, connect_args={'check_same_thread': False,'timeout':30} if URL.startswith('sqlite') else {'connect_timeout': 15}, pool_pre_ping=True, **engine_options)
 if URL.startswith('sqlite'):
     @event.listens_for(engine,'connect')
     def foreign_keys(connection,record):

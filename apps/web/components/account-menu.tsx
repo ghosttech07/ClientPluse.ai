@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {ChevronDown,LogOut,Settings,UserRound} from 'lucide-react';
+import {BookOpen,ChevronDown,LogOut,Settings,UserRound} from 'lucide-react';
 import {supabase} from '@/lib/api';
 import {pulse,Settings as CompanySettings} from '@/lib/pulse';
 
@@ -19,5 +19,5 @@ export function AccountMenu({company}:{company?:string}){
  useEffect(()=>{if(!open)return;const outside=(event:PointerEvent)=>{if(!root.current?.contains(event.target as Node))setOpen(false);};const escape=(event:KeyboardEvent)=>{if(event.key==='Escape'){setOpen(false);root.current?.querySelector('button')?.focus();}};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape);};},[open]);
  if(!account)return null;
  async function logout(){setBusy(true);setError('');const result=await supabase?.auth.signOut();if(result?.error){setError(result.error.message);setBusy(false);return;}setOpen(false);router.replace('/login');}
- return <div className="cp-user-menu" ref={root}><button className="cp-user-trigger" aria-label="Your account" aria-expanded={open} onClick={()=>setOpen(!open)}><span className="cp-avatar"><UserRound size={18}/></span><span className="cp-user-name">{account.name}</span><ChevronDown size={14}/></button>{open&&<section className="cp-user-popover" aria-label="Account details"><strong>{account.name}</strong><span>{account.email}</span><small>{workspace}</small><Link href="/dashboard/settings" onClick={()=>setOpen(false)}><Settings size={16}/>Company settings</Link>{error&&<p role="alert">{error}</p>}<button disabled={busy} onClick={()=>void logout()}><LogOut size={16}/>{busy?'Signing out…':'Sign out'}</button></section>}</div>;
+ return <div className="cp-user-menu" ref={root}><button className="cp-user-trigger" aria-label="Your account" aria-expanded={open} onClick={()=>setOpen(!open)}><span className="cp-avatar"><UserRound size={18}/></span><span className="cp-user-name">{account.name}</span><ChevronDown size={14}/></button>{open&&<section className="cp-user-popover" aria-label="Account details"><strong>{account.name}</strong><span>{account.email}</span><small>{workspace}</small><Link href="/dashboard/settings" onClick={()=>setOpen(false)}><Settings size={16}/>Company settings</Link><Link href="/dashboard/manual" onClick={()=>setOpen(false)}><BookOpen size={16}/>User manual</Link>{error&&<p role="alert">{error}</p>}<button disabled={busy} onClick={()=>void logout()}><LogOut size={16}/>{busy?'Signing out…':'Sign out'}</button></section>}</div>;
 }

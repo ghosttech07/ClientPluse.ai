@@ -66,3 +66,7 @@
 .pulse .cp-tracking-nav:has(a:hover) a.cp-active:not(:hover){background:transparent;color:var(--cp-text)}
 @media(prefers-reduced-motion:reduce){.pulse .cp-nav-highlight{transition:none}}
 .pulse .cp-sidebar .cp-tracking-nav a:hover{background:transparent;color:#fff;box-shadow:none}
+
+/* Clean app typography; the landing page retains its existing typeface. */
+.pulse:not(.cp-landing){font-family:'Inter',Arial,sans-serif;font-weight:500}
+.pulse:not(.cp-landing) button,.pulse:not(.cp-landing) input,.pulse:not(.cp-landing) textarea,.pulse:not(.cp-landing) select{font-family:inherit}

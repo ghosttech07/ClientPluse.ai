@@ -115,3 +115,5 @@
 .cp-orbit-card strong{font-size:clamp(9px,.9vw,13px)}
 @container(max-width:620px){.cp-orbit-card small{display:none}.cp-orbit-card{padding:6px;gap:4px}}
 @media(max-width:520px){.cp-orbit-card>span svg{width:14px;height:14px}.cp-orbit-card{padding:4px}}
+
+.cp-effects .cp-hero-visual>.cp-visual-header{order:3}

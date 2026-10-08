@@ -1,5 +1,5 @@
 """Explicitly reviewed draft sending via Resend; no browser API secrets."""
-import os,re,smtplib,ssl
+import os,re,smtplib,ssl,base64
 from email.message import EmailMessage
 from email.utils import make_msgid
 from email.utils import parseaddr
@@ -19,6 +19,11 @@ def valid_email(value):
 
 
 def sender():
+    if os.getenv('EMAIL_PROVIDER','resend').lower()=='gmail_api':
+        address=os.getenv('GMAIL_EMAIL','').strip()
+        if not valid_email(address) or not all(os.getenv(key,'').strip() for key in ('GMAIL_CLIENT_ID','GMAIL_CLIENT_SECRET','GMAIL_REFRESH_TOKEN')):
+            raise HTTPException(503,'Complete Gmail API authorization: configure GMAIL_EMAIL, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET and GMAIL_REFRESH_TOKEN on the backend.')
+        return address
     if os.getenv('EMAIL_PROVIDER','resend').lower()=='gmail':
         address=os.getenv('GMAIL_EMAIL','').strip()
         if not valid_email(address) or not os.getenv('GMAIL_APP_PASSWORD','').strip():
@@ -29,6 +34,33 @@ def sender():
     if not os.getenv('RESEND_API_KEY','').startswith('re_') or not valid_email(address) or any(word in address for word in ['yourdomain','your-actual-domain']) or '\n' in value or '\r' in value:
         raise HTTPException(503,'Email sending is not configured. Add a verified Resend sender address in the backend environment.')
     return value
+
+
+def gmail_api_send(message):
+    """Refresh server-only OAuth credentials and send over HTTPS, without retries."""
+    try:
+        token=httpx.post('https://oauth2.googleapis.com/token',data={
+            'client_id':os.getenv('GMAIL_CLIENT_ID'),
+            'client_secret':os.getenv('GMAIL_CLIENT_SECRET'),
+            'refresh_token':os.getenv('GMAIL_REFRESH_TOKEN'),
+            'grant_type':'refresh_token',
+        },timeout=20)
+        if token.status_code!=200:
+            raise HTTPException(503,'Google authorization failed. Reconnect the Gmail account and update its OAuth credentials.')
+        access_token=token.json().get('access_token')
+        if not access_token:
+            raise HTTPException(503,'Google did not return an access token. Reconnect the Gmail account.')
+        response=httpx.post('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+            headers={'Authorization':'Bearer '+access_token},
+            json={'raw':base64.urlsafe_b64encode(message.as_bytes()).decode('ascii')},timeout=25)
+        if response.status_code!=200:
+            raise HTTPException(502,'Google did not accept the email. Check Gmail API access, send permission and account sending limits. Check Sent before creating another draft.')
+        provider_id=response.json().get('id')
+        if not provider_id:
+            raise HTTPException(502,'Google did not confirm the message reference. Check Sent before creating another draft.')
+        return provider_id
+    except (httpx.HTTPError,ValueError):
+        raise HTTPException(502,'Gmail API could not confirm the send. Check Sent before creating another draft to avoid duplicates.')
 
 
 class SendDraft(BaseModel):
@@ -68,9 +100,10 @@ def send(did:str,body:SendDraft,org=Depends(tenant),reply=Depends(verified_email
     if draft.content!=body.content:raise HTTPException(409,'Save and approve your latest edits before sending.')
     if draft.kind!='Follow-up email':raise HTTPException(400,'Only follow-up email drafts can be sent to customers.')
     from_address=sender()
-    gmail=os.getenv('EMAIL_PROVIDER','resend').lower()=='gmail'
+    provider=os.getenv('EMAIL_PROVIDER','resend').lower()
+    gmail=provider in ('gmail','gmail_api')
     if gmail and existing:
-        raise HTTPException(409,'This draft already has a send attempt. Check your Sent folder before generating a new draft; automatic SMTP retries could send duplicates.')
+        raise HTTPException(409,'This draft already has a send attempt. Check your Sent folder before generating a new draft; automatic retries could send duplicates.')
     subject=draft.title.replace('\r',' ').replace('\n',' ')
     payload={'from':from_address,'to':[body.recipient],'reply_to':reply,'subject':subject,'text':draft.content}
     if existing and existing.payload!=payload:raise HTTPException(409,'A send attempt already exists with different details. Keep the original recipient and content for a safe retry.')
@@ -88,6 +121,10 @@ def send(did:str,body:SendDraft,org=Depends(tenant),reply=Depends(verified_email
         message['Subject']=subject
         message['Message-ID']=make_msgid()
         message.set_content(draft.content)
+        if provider=='gmail_api':
+            existing.provider_id=gmail_api_send(message)
+            existing.status='Accepted';db.commit()
+            return {'status':'Accepted','recipient':body.recipient,'provider_id':existing.provider_id}
         try:
             with smtplib.SMTP_SSL('smtp.gmail.com',465,context=ssl.create_default_context(),timeout=25) as smtp:
                 smtp.login(from_address,os.getenv('GMAIL_APP_PASSWORD','').replace(' ',''))

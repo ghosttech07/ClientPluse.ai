@@ -31,7 +31,28 @@ export default function PulseDashboard({section='overview'}:{section?:string}){
  const [chatFiles,setChatFiles]=useState<File[]>([]);const chatFileInput=useRef<HTMLInputElement>(null);
  const createRef=useDialogFocus(create,()=>setCreate(false));
  const fileInput=useRef<HTMLInputElement>(null),inFlight=useRef(false),chatHistory=useRef<HTMLDivElement>(null);
- const load=useCallback(async(quiet=false)=>{if(inFlight.current)return;inFlight.current=true;if(!quiet)setLoading(true);try{const clients=await pulse<Customer[]>('/customers?limit=100');setCustomers(clients);if(section==='overview')setSummary(await pulse<Summary>('/dashboard/summary'));if(section==='complaints')setComplaints(await pulse<Complaint[]>('/complaints?limit=100'));if(section==='uploads')setUploads(await pulse<Upload[]>('/uploads?limit=100'));if(section==='alerts')setAlerts(await pulse<Alert[]>('/alerts?limit=100'));if(section==='reports')setDrafts(await pulse<Draft[]>('/drafts?limit=100'));if(section==='settings')setSettings(await pulse<Settings>('/settings'));if(section==='intelligence'){const chats=await pulse<{id:string;title:string}[]>('/intelligence/chats');setThreads(chats);const selected=threadId||chats[0]?.id||'';if(selected!==threadId)setThreadId(selected);setMessages(await pulse<Chat[]>('/intelligence/messages?'+new URLSearchParams({...(customerId?{customer_id:customerId}:{}),...(selected?{thread_id:selected}:{})}).toString()));}}catch(e){setError((e as Error).message);}finally{setLoading(false);inFlight.current=false;}},[section,customerId,threadId]);
+ const load=useCallback(async(quiet=false)=>{
+  if(inFlight.current)return;
+  inFlight.current=true;if(!quiet)setLoading(true);
+  try{
+   const tasks:Promise<unknown>[]=[];
+   if(!['overview','settings'].includes(section))tasks.push(pulse<Customer[]>('/customers?limit=100').then(setCustomers));
+   if(section==='overview')tasks.push(pulse<Summary>('/dashboard/summary').then(setSummary));
+   if(section==='complaints')tasks.push(pulse<Complaint[]>('/complaints?limit=100').then(setComplaints));
+   if(section==='uploads')tasks.push(pulse<Upload[]>('/uploads?limit=100').then(setUploads));
+   if(section==='alerts')tasks.push(pulse<Alert[]>('/alerts?limit=100').then(setAlerts));
+   if(section==='reports')tasks.push(pulse<Draft[]>('/drafts?limit=100').then(setDrafts));
+   if(section==='settings')tasks.push(pulse<Settings>('/settings').then(setSettings));
+   if(section==='intelligence')tasks.push((async()=>{
+    const chats=await pulse<{id:string;title:string}[]>('/intelligence/chats');setThreads(chats);
+    const selected=threadId||chats[0]?.id||'';if(selected!==threadId)setThreadId(selected);
+    setMessages(await pulse<Chat[]>('/intelligence/messages?'+new URLSearchParams({...(customerId?{customer_id:customerId}:{}),...(selected?{thread_id:selected}:{})}).toString()));
+   })());
+   const results=await Promise.allSettled(tasks);
+   const failed=results.find((result):result is PromiseRejectedResult=>result.status==='rejected');
+   if(failed)throw failed.reason;
+  }catch(e){setError((e as Error).message);}finally{setLoading(false);inFlight.current=false;}
+ },[section,customerId,threadId]);
  useEffect(()=>{void load();const timer=setInterval(()=>{if(document.visibilityState==='visible'&&['overview','uploads','customers','alerts','complaints'].includes(section))void load(true);},5000);return()=>clearInterval(timer);},[load,section]);
  useEffect(()=>{const history=chatHistory.current;if(section==='intelligence'&&history&&(messages.length||busy))history.scrollTop=history.scrollHeight;},[section,messages,busy,loading]);
  async function createChat(){setBusy(true);try{const chat=await pulse<{id:string;title:string}>('/intelligence/chats',{method:'POST'});setThreads(previous=>[chat,...previous]);setThreadId(chat.id);setMessages([]);setQuestion('');setChatFiles([]);setShareUrl('');setError('');}catch(e){setError((e as Error).message);}finally{setBusy(false);}}

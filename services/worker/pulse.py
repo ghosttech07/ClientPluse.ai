@@ -152,17 +152,26 @@ def recalculate(db, customer):
     organization=db.get(Organization,customer.organization_id)
     weights=WEIGHTS
     cases=list(db.scalars(select(Complaint).where(Complaint.customer_id==customer.id,Complaint.organization_id==customer.organization_id)))
+    case_ids=[case.id for case in cases]
+    links_by_case={case_id:[] for case_id in case_ids}
+    all_links=list(db.scalars(select(ComplaintLink).where(ComplaintLink.complaint_id.in_(case_ids)))) if case_ids else []
+    for link in all_links:links_by_case[link.complaint_id].append(link)
+    evidence_ids={link.evidence_id for link in all_links}
+    evidence={row.id:row for row in db.scalars(select(Evidence).where(Evidence.id.in_(evidence_ids)))} if evidence_ids else {}
+    all_alerts=list(db.scalars(select(Alert).where(Alert.customer_id==customer.id,Alert.organization_id==customer.organization_id)))
+    alerts_by_case={case_id:[] for case_id in case_ids}
+    for alert in all_alerts:alerts_by_case.setdefault(alert.complaint_id,[]).append(alert)
     factors=[]; current=datetime.now(timezone.utc)
     for case in cases:
-        links=list(db.scalars(select(ComplaintLink).where(ComplaintLink.complaint_id==case.id)))
-        records=[(l,db.get(Evidence,l.evidence_id)) for l in links]
+        links=links_by_case[case.id]
+        records=[(l,evidence[l.evidence_id]) for l in links]
         records.sort(key=lambda pair:stamp(pair[1].occurred_at) or stamp(pair[1].created_at))
         if records:
             last=records[-1][0].finding
             case.status=case.human_status or last['status']
             case.severity=max((l.finding['severity'] for l,_ in records),key=lambda s:['Low','Moderate','High','Critical'].index(s))
         if case.status=='Resolved':
-            for alert in db.scalars(select(Alert).where(Alert.complaint_id==case.id)): alert.status='Resolved'
+            for alert in alerts_by_case.get(case.id,[]):alert.status='Resolved'
             continue
         ids=[l.evidence_id for l,_ in records]
         def add(key,label): factors.append({'factor':label,'points':weights[key],'complaint_id':case.id,'evidence_ids':ids})
@@ -189,7 +198,7 @@ def recalculate(db, customer):
         if escalation:triggers.append(('Escalation','High','Escalation signal needs review'))
         if increasing:triggers.append(('Severity increase','High','Recorded complaint severity increased within 7 days'))
         for kind,severity,title in triggers:
-            existing=db.scalar(select(Alert).where(Alert.complaint_id==case.id,Alert.kind==kind))
+            existing=next((alert for alert in alerts_by_case.get(case.id,[]) if alert.kind==kind),None)
             if existing:existing.evidence_ids=ids
             else:db.add(Alert(organization_id=customer.organization_id,customer_id=customer.id,complaint_id=case.id,kind=kind,severity=severity,title=title,evidence_ids=ids))
     score=min(100,sum(f['points'] for f in factors)) if cases else None
@@ -199,7 +208,7 @@ def recalculate(db, customer):
     risk.score=score;risk.category=category;risk.factors=factors
     if category=='Critical':
         open_case=next((c for c in cases if c.status!='Resolved'),None)
-        if open_case and not db.scalar(select(Alert).where(Alert.customer_id==customer.id,Alert.kind=='Critical risk',Alert.status=='Open')):
+        if open_case and not any(alert.kind=='Critical risk' and alert.status=='Open' for alert in all_alerts):
             db.add(Alert(organization_id=customer.organization_id,customer_id=customer.id,complaint_id=open_case.id,kind='Critical risk',severity='Critical',title='Customer risk reached the critical threshold',evidence_ids=list({eid for f in factors for eid in f['evidence_ids']})))
     db.flush()
 

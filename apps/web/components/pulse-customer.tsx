@@ -9,7 +9,7 @@ import {pulse,Customer,Source,Draft} from '@/lib/pulse';
 import {PulseShell} from './pulse-shell';
 import {PulseSource} from './pulse-source';
 import {WorkspaceLoading} from './workspace-loading';
-import {Badge,Empty,Sources} from './pulse-dashboard';
+import {Badge,Empty,Sources} from './pulse-common';
 export default function PulseCustomer({id}:{id:string}){
  const [customer,setCustomer]=useState<Customer|null>(null),[timeline,setTimeline]=useState<Source[]>([]),[source,setSource]=useState<Source|null>(null),[error,setError]=useState(''),[tab,setTab]=useState('overview'),[busy,setBusy]=useState(false),[draft,setDraft]=useState<Draft|null>(null);const router=useRouter();
  const load=useCallback(async()=>{try{const [c,t]=await Promise.all([pulse<Customer>('/customers/'+id),pulse<Source[]>('/customers/'+id+'/timeline')]);setCustomer(c);setTimeline(t);}catch(e){setError((e as Error).message);}},[id]);

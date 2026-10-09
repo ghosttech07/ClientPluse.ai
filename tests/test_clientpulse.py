@@ -504,3 +504,22 @@ def test_process_queued_batch(client,customer,monkeypatch):
     assert batch_res.json()['processed_count']==2
     assert client.get(f'/api/v1/uploads/{t1["id"]}').json()['status']=='Ready'
     assert client.get(f'/api/v1/uploads/{t2["id"]}').json()['status']=='Ready'
+
+
+def test_risk_recalculation_batches_database_reads(client,customer):
+    from sqlalchemy import event
+    from services.api.db import engine
+    with Session() as db:
+        row=db.get(m.Customer,customer['id'])
+        for index in range(20):
+            db.add(m.Complaint(organization_id=row.organization_id,customer_id=row.id,category='Delivery delay',description=f'Test case {index}',severity='Low',uncertainty='Synthetic regression fixture'))
+        db.commit()
+        reads=[]
+        def count_reads(connection,cursor,statement,parameters,context,executemany):
+            if statement.lstrip().upper().startswith('SELECT'):reads.append(statement)
+        event.listen(engine,'before_cursor_execute',count_reads)
+        try:worker.recalculate(db,row)
+        finally:event.remove(engine,'before_cursor_execute',count_reads)
+        assert len(reads)<=6, f'Risk recalculation made {len(reads)} reads for 20 cases'
+        risk=db.scalar(select(m.Risk).where(m.Risk.customer_id==row.id))
+        assert risk.score==0

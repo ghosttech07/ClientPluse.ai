@@ -83,9 +83,12 @@ def evidence_ref(db,e):
 
 
 def case_detail(db,case):
-    links=list(db.scalars(select(m.ComplaintLink).where(m.ComplaintLink.complaint_id==case.id)))
-    return {**serialize(case),'evidence':[evidence_ref(db,db.get(m.Evidence,l.evidence_id)) for l in links],
-            'findings':[l.finding for l in links],'interaction_count':len({db.get(m.Evidence,l.evidence_id).upload_id for l in links})}
+    records=list(db.execute(select(m.ComplaintLink,m.Evidence,m.Upload)
+        .join(m.Evidence,m.Evidence.id==m.ComplaintLink.evidence_id)
+        .join(m.Upload,m.Upload.id==m.Evidence.upload_id)
+        .where(m.ComplaintLink.complaint_id==case.id)))
+    return {**serialize(case),'evidence':[evidence_ref(db,evidence) for _,evidence,_ in records],
+            'findings':[link.finding for link,_,_ in records],'interaction_count':len({evidence.upload_id for _,evidence,_ in records})}
 
 
 class CustomerBody(BaseModel):

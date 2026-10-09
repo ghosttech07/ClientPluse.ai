@@ -1,18 +1,19 @@
 'use client';
 import {useCallback,useEffect,useState} from 'react';
 import Link from 'next/link';
-import {DraftEmail} from './draft-email';
+import dynamic from 'next/dynamic';
+const DraftEmail=dynamic(()=>import('./draft-email').then(module=>module.DraftEmail));
 import {InlineAction} from './inline-action';
 import {ArrowLeft,UploadCloud,FileText,ArrowUpRight,LoaderCircle,Trash2,Check,Mail,Plus,Play,RefreshCw} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {pulse,Customer,Source,Draft} from '@/lib/pulse';
 import {PulseShell} from './pulse-shell';
-import {PulseSource} from './pulse-source';
+const PulseSource=dynamic(()=>import('./pulse-source').then(module=>module.PulseSource));
 import {WorkspaceLoading} from './workspace-loading';
 import {Badge,Empty,Sources} from './pulse-common';
 export default function PulseCustomer({id}:{id:string}){
  const [customer,setCustomer]=useState<Customer|null>(null),[timeline,setTimeline]=useState<Source[]>([]),[source,setSource]=useState<Source|null>(null),[error,setError]=useState(''),[tab,setTab]=useState('overview'),[busy,setBusy]=useState(false),[draft,setDraft]=useState<Draft|null>(null);const router=useRouter();
- const load=useCallback(async()=>{try{const [c,t]=await Promise.all([pulse<Customer>('/customers/'+id),pulse<Source[]>('/customers/'+id+'/timeline')]);setCustomer(c);setTimeline(t);}catch(e){setError((e as Error).message);}},[id]);
+ const load=useCallback(async()=>{try{const results=await Promise.allSettled([pulse<Customer>('/customers/'+id).then(setCustomer),pulse<Source[]>('/customers/'+id+'/timeline').then(setTimeline)]);const failed=results.find((result):result is PromiseRejectedResult=>result.status==='rejected');if(failed)throw failed.reason;}catch(e){setError((e as Error).message);}},[id]);
  useEffect(()=>{void load();},[load]);
  async function act(action:()=>Promise<unknown>){setBusy(true);setError('');try{await action();await load();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
  async function show(id:string){try{setSource(await pulse<Source>('/evidence/'+id));}catch(e){setError((e as Error).message);}}

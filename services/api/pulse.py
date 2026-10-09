@@ -315,8 +315,10 @@ def process_queued(limit:int=Query(5,ge=1,le=10),org=Depends(tenant),db=Depends(
 @router.get('/customers/{cid}/timeline')
 def timeline(cid:str,org=Depends(tenant),db=Depends(database)):
     get(db,m.Customer,cid,org)
-    rows=list(db.scalars(select(m.Evidence).where(m.Evidence.customer_id==cid,m.Evidence.organization_id==org)))
-    return [evidence_ref(db,e) for e in sorted(rows,key=lambda e:e.occurred_at or e.created_at)]
+    rows=list(db.execute(select(m.Evidence,m.Upload)
+        .join(m.Upload,m.Upload.id==m.Evidence.upload_id)
+        .where(m.Evidence.customer_id==cid,m.Evidence.organization_id==org)))
+    return [evidence_ref(db,e) for e,_ in sorted(rows,key=lambda pair:pair[0].occurred_at or pair[0].created_at)]
 
 
 @router.get('/customers/{cid}/risk')

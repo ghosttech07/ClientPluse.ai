@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=block');
 .orbit-frame{--u:max(min(calc(100vw / 1563),calc(100vh / 460)),0.80px);--ink-nav:rgba(255,255,255,.91);--r-btn:calc(10 * var(--u));position:fixed;inset:0;overflow:hidden;background:#000;isolation:isolate;color:#fff;font-family:'Inter','Helvetica Neue',Arial,system-ui,sans-serif;font-optical-sizing:none;font-feature-settings:'kern' 1,'calt' 1;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
 @supports(height:100dvh){.orbit-frame{--u:max(min(calc(100vw / 1563),calc(100dvh / 460)),0.80px)}}
 .orbit-frame *,.orbit-frame *:before,.orbit-frame *:after{box-sizing:border-box}.orbit-frame a{text-decoration:none;color:inherit}.orbit-frame a:focus-visible,.orbit-frame button:focus-visible{outline:calc(2 * var(--u)) solid #9b8cff;outline-offset:calc(3 * var(--u));border-radius:calc(4 * var(--u))}

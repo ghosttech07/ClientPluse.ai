@@ -2,12 +2,17 @@ import { createClient } from '@supabase/supabase-js';
 export const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {auth:{flowType:'pkce',detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}}) : null;
 export async function headers(): Promise<Record<string,string>> { const token = supabase ? (await supabase.auth.getSession()).data.session?.access_token : null; return token ? { Authorization: `Bearer ${token}` } : {}; }
 const pendingReads = new Map<string, Promise<unknown>>();
+const settingsReads = new Map<string, {value:unknown; expires:number}>();
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const requestHeaders = new Headers(await headers());
   if(init.body && !(init.body instanceof FormData)) requestHeaders.set('Content-Type','application/json');
   new Headers(init.headers).forEach((value,key)=>requestHeaders.set(key,value));
   const canShare = (!init.method || init.method.toUpperCase() === 'GET') && !init.signal && !init.body;
   const key = JSON.stringify([path, Array.from(requestHeaders.entries()), init.cache, init.credentials]);
+  const canCacheSettings = canShare && path === '/v1/settings' && init.cache !== 'no-store';
+  if(init.method && !['GET','HEAD'].includes(init.method.toUpperCase())) settingsReads.clear();
+  const cached = canCacheSettings ? settingsReads.get(key) : undefined;
+  if(cached && cached.expires > Date.now()) return cached.value as T;
   if(canShare && pendingReads.has(key)) return pendingReads.get(key) as Promise<T>;
   const request = (async () => {
   const response = await fetch(`/api${path}`, { ...init, headers: requestHeaders });
@@ -19,7 +24,11 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
   })();
   if(canShare) pendingReads.set(key, request);
-  try { return await request; }
+  try {
+    const value = await request;
+    if(canCacheSettings) { settingsReads.clear(); settingsReads.set(key,{value,expires:Date.now()+15000}); }
+    return value;
+  }
   finally { if(canShare && pendingReads.get(key) === request) pendingReads.delete(key); }
 }
 export async function fileBlob(path: string) { const r = await fetch(`/api${path}`, { headers: await headers() }); if (!r.ok) throw new Error('Unable to open this source. Please sign in again.'); return r.blob(); }
